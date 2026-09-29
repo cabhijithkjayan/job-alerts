@@ -1,0 +1,13 @@
+{
+  "job_titles": [
+    "Chartered Accountant",
+    "Finance Manager",
+    "Senior Accountant"
+  ],
+  "locations": ["United Arab Emirates"],
+  "min_ats_score": 70,
+  "exclude_words": ["intern", "internship", "articleship", "trainee", "arabic speaker only"],
+  "max_jobs_per_run": 15,
+  "max_company_lookups_per_run": 4,
+  "notify_when_empty": true
+}
