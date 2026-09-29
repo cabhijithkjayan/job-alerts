@@ -2,6 +2,57 @@ name: UAE Job Alerts
 
 on:
   schedule:
+    - cron: "50 4 * * *"     # FULL search daily 8:50 AM UAE (arrives ~9 AM)
+    - cron: "*/30 * * * *"   # every 30 min: free check - /search command, pasted posts, LinkedIn alert emails
+  workflow_dispatch:          # "Run workflow" button = full search
+
+permissions:
+  contents: write
+
+concurrency:
+  group: job-alerts
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Search jobs and send to Telegram
+        env:
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RUN_SCHEDULE: ${{ github.event.schedule }}
+        run: python job_search.py
+      - name: Remember jobs, companies and usage
+        if: always()
+        run: |
+          git config user.name "job-bot"
+          git config user.email "job-bot@users.noreply.github.com"
+          for f in seen_jobs.json companies.json usage.json; do [ -f "$f" ] && git add "$f"; done
+          git diff --staged --quiet || git commit -m "Update bot memory"
+          git pull --rebase --autostash || true
+          git push || true
+      - name: Tell the Errors channel if this run failed
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d chat_id=-1004352353621 \
+            --data-urlencode "text=⚠️ Job bot run failed. Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > /dev/null
+name: UAE Job Alerts
+
+on:
+  schedule:
     - cron: "50 4 * * *"   # 04:50 UTC = 8:50 AM UAE (GitHub can start a few minutes late, so messages arrive around 9 AM)
   workflow_dispatch:
 
