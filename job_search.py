@@ -516,14 +516,15 @@ def main():
     # ---------- 2. LinkedIn hiring posts (public, via Google)
     li = cfg.get("linkedin", {})
     posts_sent = 0
-    if li.get("enabled") and li.get("hashtags"):
+    if li.get("enabled") and (li.get("hashtags") or li.get("hashtag_groups")):
         min_hits = li.get("min_keyword_matches", 2)
         groups = li.get("searches", [li.get("keywords", [])])
         if li.get("combine_searches", True):
             groups = [[k for g in groups for k in g]]
-        for group in groups:
-            print(f"LinkedIn posts: {li['hashtags']} + {group}")
-            for post in search_linkedin_posts(li["hashtags"], group, li.get("max_age_days", 7)):
+        tag_groups = li.get("hashtag_groups") or [li.get("hashtags", [])]
+        for tags, group in [(t, g) for t in tag_groups for g in groups]:
+            print(f"LinkedIn posts: {tags} + {group}")
+            for post in search_linkedin_posts(tags, group, li.get("max_age_days", 7)):
                 link = post.get("link", "")
                 if "linkedin.com" not in link:
                     continue
@@ -545,6 +546,9 @@ def main():
                 if li.get("require_any") and not any(x.lower() in low for x in li["require_any"]):
                     stats["low"] += 1   # not a hiring post (e.g. someone looking for a job)
                     continue
+                if li.get("require_location_any") and not any(x.lower() in low for x in li["require_location_any"]):
+                    stats["excluded"] += 1   # not a UAE job
+                    continue
                 nb = norm(body)
                 have = [label for label, v in skills if found(v, nb) and found(v, cv_norm)]
                 title_hit = any(all(f" {w} " in nb for w in norm(t).split()) for t in titles)
@@ -553,7 +557,7 @@ def main():
                     continue
                 if posts_sent >= li.get("max_posts_per_run", 10):
                     break
-                if send(fmt_post(post, have, li["hashtags"])):
+                if send(fmt_post(post, have, [])):
                     posts_sent += 1
                     seen |= keys
                 time.sleep(3)
