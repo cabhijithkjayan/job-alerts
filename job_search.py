@@ -23,6 +23,8 @@ from urllib.parse import urljoin, urlparse, urlunparse
 import requests
 
 import linkedin_inbox as lii
+import email_alerts as ea
+import telegram_channels as tgc
 
 BASE = Path(__file__).parent
 CONFIG = BASE / "config.json"
@@ -533,7 +535,7 @@ def main():
     scheduled_full = os.environ.get("RUN_SCHEDULE", "") in ("", cfg.get("daily_cron", "50 4 * * *"))
     full = scheduled_full or bool(commands)
     run_label = ("Search on request (/search)" if commands and not scheduled_full
-                 else "Daily full search" if full else "Quick check (Gmail + pasted posts)")
+                 else "Daily full search" if full else "Quick check (emails, Telegram channels, pasted posts)")
     print("Run type:", run_label)
     for c in commands:
         try:
@@ -681,12 +683,15 @@ def main():
                     seen |= keys
                 time.sleep(3)
 
-    # ---------- 3. LinkedIn job-alert emails (Gmail) - free
+    # ---------- 3. Job-alert EMAILS from all portals (Gmail) - free
     alerts_sent = 0
-    for job in lii.gmail_linkedin_jobs(cfg.get("gmail_days", 3)):
+    uae_words = cfg.get("linkedin", {}).get("require_location_any", ["uae", "dubai", "abu dhabi", "sharjah"])
+    email_jobs, per_source = ea.gmail_alert_jobs(cfg.get("email_sources"), cfg.get("gmail_days", 3))
+    sent_by_source = {}
+    for job in email_jobs:
         if not job.get("title"):
             continue
-        keys = job_keys(job) | {"l:" + job["linkedin_id"]}
+        keys = job_keys(job) | {"e:" + h(job["uid"])}
         if keys & (seen | run_keys):
             stats["dup"] += 1
             continue
@@ -696,17 +701,100 @@ def main():
             continue
         tl = f" {job['title'].lower()} "
         if cfg.get("alert_title_keywords") and not any(k in tl for k in cfg["alert_title_keywords"]):
-            stats["low"] += 1   # broad alert (e.g. "Jobs in UAE") - not a finance role
+            stats["low"] += 1   # not a finance role
+            continue
+        if job["location"] and not has_word(job["location"], uae_words):
+            stats["excluded"] += 1   # outside the UAE (e.g. Indeed India)
+            continue
+        age = age_days(job.get("posted", ""))
+        if age is not None and age > max_age:
+            stats["old"] += 1
             continue
         e = html.escape
-        msg = "\n".join([f"💼 <b>LinkedIn Job Alert</b>",
-                         f"<b>{e(job['title'])}</b>", f"🏢 {e(job['company_name'])}",
-                         f"📍 {e(job['location'])}", "",
-                         f'👉 <a href="{e(job["apply_options"][0]["link"], quote=True)}">Open in LinkedIn app</a>'])
-        if send(msg, all_chat or None):
+        lines = [f"💼 <b>{e(job['source'])} job alert</b>", f"<b>{e(job['title'])}</b>"]
+        if job["company_name"]:
+            lines.append(f"🏢 {e(job['company_name'])}")
+        if job["location"]:
+            lines.append(f"📍 {e(job['location'])}")
+        if job.get("posted"):
+            lines.append(f"🕒 {e(job['posted'])}")
+        if len(job.get("snippet", "")) >= 80:
+            score, have, miss = ats_score(job["title"], job["snippet"], cv_norm, skills, titles)
+            lines.append(f"🎯 Match (from summary): {score}%")
+            if have:
+                lines.append(f"✅ {e(', '.join(have[:6]))}")
+        if job["apply_options"]:
+            link = job["apply_options"][0]["link"]
+            label = "Open in LinkedIn app" if "linkedin.com" in link else f"Open on {job['source']}"
+            lines += ["", f'👉 <a href="{e(app_link(link), quote=True)}">{e(label)}</a>']
+        if send("\n".join(lines), all_chat or None):
             alerts_sent += 1
+            sent_by_source[job["source"]] = sent_by_source.get(job["source"], 0) + 1
             seen |= keys
         time.sleep(3)
+    if sent_by_source:
+        print("Email alerts sent by source:", sent_by_source)
+
+    # ---------- 5. Public Telegram job channels (t.me/s/...) - free
+    tg_sent = 0
+    chans = [tgc.channel_name(c) for c in cfg.get("telegram_channels", [])]
+    skipped_private = [c for c, n in zip(cfg.get("telegram_channels", []), chans) if not n]
+    if skipped_private:
+        print("Private/invalid channel links skipped (forward their posts to your inbox instead):", skipped_private)
+    for name in [c for c in chans if c]:
+        for post in tgc.fetch_channel(name, cfg.get("telegram_posts_per_channel", 20)):
+            if tg_sent >= cfg.get("max_channel_posts_per_run", 30):
+                break
+            body = post["text"]
+            words = " ".join(norm(body).split()[:40])
+            keys = {"tg:" + post["id"], "s:" + h(words)}
+            if keys & (seen | run_keys) or len(body) < 40:
+                stats["dup"] += 1
+                continue
+            run_keys |= keys
+            age = tgc.age_days_iso(post["date"])
+            if age is not None and age > max_age:
+                stats["old"] += 1
+                seen |= keys
+                continue
+            low = body.lower()
+            if has_word(low, exclude + li.get("exclude_phrases", [])) or \
+                    any(w in low for w in lii.SCAM_WORDS):
+                stats["excluded"] += 1
+                seen |= keys
+                continue
+            if not has_word(low, uae_words):
+                stats["excluded"] += 1          # not a UAE job
+                seen |= keys
+                continue
+            if not any(k in f" {low} " for k in cfg.get("alert_title_keywords", [])):
+                stats["low"] += 1               # not a finance / accounts / audit role
+                seen |= keys
+                continue
+            first = next((l.strip(" 🚨📌🔹*#-•") for l in body.splitlines() if len(l.strip()) > 6), "Job post")[:90]
+            score, have, miss = ats_score(first, body, cv_norm, skills, titles)
+            e = html.escape
+            lines = [f"📢 <b>From @{e(name)}</b>" + (f" · {age}d ago" if age else ""), f"<b>{e(first)}</b>",
+                     f"<i>{e(body[:500])}{'…' if len(body) > 500 else ''}</i>",
+                     f"🎯 <b>ATS match: {score}%</b>"]
+            if have:
+                lines.append(f"✅ {e(', '.join(have[:8]))}")
+            if miss:
+                lines.append(f"⚠️ Missing: {e(', '.join(miss[:6]))}")
+            lines += email_block(clean_emails(EMAIL_RE.findall(body), allow_personal=True), first)
+            lines += ["", f'👉 <a href="{e(post["link"], quote=True)}">Open post in Telegram</a>']
+            msg = "\n".join(lines)
+            ok = send(msg, all_chat or None)
+            if ok and score >= min_score and all_chat:
+                time.sleep(2)
+                send(msg)
+                sent += 1
+            if ok:
+                tg_sent += 1
+                seen |= keys
+            time.sleep(3)
+    if chans:
+        print(f"Telegram channels: {tg_sent} post(s) sent")
 
     # ---------- 4. Posts you shared to the bot in Telegram - free
     shared_sent = 0
@@ -759,7 +847,7 @@ def main():
             pass
         time.sleep(2)
     lii.ack_inbox(BOT_TOKEN, last_update)
-    print(f"LinkedIn alert emails sent: {alerts_sent}, shared posts saved: {shared_sent}")
+    print(f"Email job alerts sent: {alerts_sent}, shared posts saved: {shared_sent}")
 
     total = sent + posts_sent + alerts_sent + shared_sent
     if full and total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0) \
@@ -769,6 +857,8 @@ def main():
     save_json(SEEN_FILE, sorted(seen)[-8000:])
     save_json(COMPANY_FILE, companies)
     ERRORS.extend(getattr(lii, "ERRORS", []))
+    ERRORS.extend(getattr(ea, "ERRORS", []))
+    ERRORS.extend(getattr(tgc, "ERRORS", []))
     usage["searches"] = usage.get("searches", 0) + SEARCHES[0]
     save_json(USAGE_FILE, usage)
     cfg["_run_label"] = run_label
@@ -776,8 +866,10 @@ def main():
     send_summary(cfg, full, {
         "🎯 ATS matches → Job Search": sent,
         "📋 Other jobs → All jobs": locals().get("all_sent", 0),
-        "💼 LinkedIn alert emails": alerts_sent,
+        "💼 Email job alerts" + (" (" + ", ".join(f"{k} {v}" for k, v in sent_by_source.items()) + ")"
+                                if sent_by_source else ""): alerts_sent,
         "🔗 LinkedIn hashtag posts": posts_sent,
+        "📢 Telegram job channels": locals().get("tg_sent", 0),
         "📌 Your pasted posts": shared_sent,
     }, stats, max_age)
     print(f"\nSent {sent} job(s) + {posts_sent} LinkedIn post(s). Company lookups: {lookups}")
