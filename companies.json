@@ -43,5 +43,21 @@
    "cv@sundusglobal.com"
   ],
   "rating": "4.4 (464 reviews)"
+ },
+ "amazon": {
+  "website": "https://ae.jobsora.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "remotedxb": {
+  "website": "https://ae.trabajo.org",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "info@trabajo.org"
+  ],
+  "rating": ""
  }
 }
