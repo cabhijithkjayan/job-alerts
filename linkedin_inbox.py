@@ -41,6 +41,10 @@ def _parts(msg):
 def parse_alert(msg):
     """Extract jobs (title, company, location, link) from one LinkedIn job-alert email."""
     plain, htm = _parts(msg)
+    return parse_alert_text(plain, htm)
+
+
+def parse_alert_text(plain, htm):
     jobs, ids = [], set()
     skip = ("view job", "http", "---", "apply", "see all", "promoted", "actively recruiting",
             "easy apply", "applicant", "connection", "alumni", "new", "be an early applicant")
