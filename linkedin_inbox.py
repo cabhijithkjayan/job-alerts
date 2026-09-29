@@ -135,6 +135,12 @@ def bot_inbox(bot_token, inbox_chat_ids=(), output_chat_id=None, any_channel=Tru
         is_inbox = str(chat.get("id")) in inbox_ids or (
             any_channel and chat.get("type") == "channel"
             and str(chat.get("id")) not in {str(x) for x in (output_chat_id if isinstance(output_chat_id, (list, tuple, set)) else [output_chat_id]) if x})
+        raw = (m.get("text") or m.get("caption") or "").strip()
+        if raw.lower().split("@")[0].split(" ")[0] in ("/search", "/run"):
+            msgs.append({"update_id": u["update_id"], "chat_id": chat.get("id"),
+                         "message_id": m.get("message_id"), "is_channel": chat.get("type") == "channel",
+                         "text": raw, "command": "search", "chat_title": chat.get("title") or chat.get("first_name")})
+            continue
         if not (is_inbox or chat.get("type") == "private"):
             if chat.get("type") == "channel":
                 print(f"  (post in channel '{chat.get('title')}' id {chat.get('id')} ignored - "
