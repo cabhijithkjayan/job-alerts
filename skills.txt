@@ -1,0 +1,101 @@
+# One skill per line. Synonyms separated by |  (first one is shown in Telegram)
+# Used for the ATS score: of the skills a job mentions, how many are in your CV.
+Chartered Accountant|CA|ACA|ACCA|CPA|CMA
+IFRS|Ind AS|International Financial Reporting Standards
+GAAP|US GAAP
+VAT|UAE VAT|Value Added Tax
+Corporate Tax|UAE Corporate Tax|CT registration
+GST|Goods and Services Tax
+Income Tax|Direct Tax|TDS
+Transfer Pricing
+Statutory Audit|External Audit
+Internal Audit|Internal Controls|ICFR
+Audit
+Financial Reporting|Financial Statements|Month End Close|Year End Close
+Consolidation|Group Reporting
+Budgeting|Budget
+Forecasting|Forecast
+FP&A|Financial Planning and Analysis|Financial Planning
+Financial Analysis|Variance Analysis
+MIS|Management Reporting|Management Accounts
+Cost Accounting|Costing|Cost Control
+Cash Flow|Treasury|Cash Management
+Accounts Payable|AP
+Accounts Receivable|AR|Collections|Credit Control
+General Ledger|GL|Bookkeeping|Journal Entries
+Bank Reconciliation|Reconciliation|Reconciliations
+Fixed Assets
+Inventory|Stock
+Payroll|WPS
+Compliance|Regulatory Compliance
+Risk Management|Enterprise Risk
+Due Diligence
+Valuation
+Financial Modelling|Financial Modeling
+Mergers and Acquisitions|M&A
+Tally|Tally Prime|Tally ERP
+SAP|SAP FICO|SAP S/4HANA
+Oracle|Oracle Financials|Oracle Fusion|NetSuite
+Microsoft Dynamics|Dynamics 365|Navision|Business Central
+QuickBooks
+Zoho Books|Zoho
+Xero
+ERP
+Excel|Advanced Excel|MS Excel|VLOOKUP|Pivot Tables
+Power BI
+Power Query
+SQL
+Python
+Team Management|Team Lead|Leadership
+Stakeholder Management
+Client Handling|Client Management
+Audit Firm|Big 4|Big Four
+Free Zone|DMCC|JAFZA|DIFC
+Anti Money Laundering|AML|KYC
+Corporate Finance
+Working Capital
+Revenue Recognition|IFRS 15
+Leases|IFRS 16
+Revenue Assurance|Revenue Operations|Revenue Accounting
+Debtors Ageing|Ageing|Aging Report
+Unbilled Revenue|Unearned Revenue|Deferred Revenue
+Pricing|Pricing Strategy|Deal Pricing|Margin Analysis|Profitability Analysis
+Credit Analysis|Creditworthiness|Credit Assessment
+Project Finance|Project Financing
+Vendor Management|Supplier Management
+Procurement|Purchasing|Sourcing
+Supply Chain|Logistics
+Contract Review|Contract Management
+Company Law|Companies Act
+Taxation|Tax Compliance|Tax Filing
+Balance Sheet|P&L|Profit and Loss|Profit & Loss
+MBA|MBA Finance
+B.Com|BCom|Bachelor of Commerce
+FMCG|Trading|Wholesale
+Import Export|Import|Export
+# --- AI & Automation ---
+AI Integration|AI Implementation|AI-enabled|AI enabled|AI tools|Artificial Intelligence
+Generative AI|GenAI|Gen AI|LLM|Large Language Models
+AI Agents|Agentic AI|AI Agent|Autonomous Agents
+Prompt Engineering|Prompt Design
+ChatGPT|OpenAI|GPT
+Claude|Anthropic
+Gemini|Google Gemini
+Copilot|Microsoft Copilot
+Grok|xAI
+n8n|Zapier|Make.com|Workflow Automation|Process Automation|Automation
+Power Automate|RPA|Robotic Process Automation|UiPath
+Vibe Coding|AI-assisted Development|Low-code|No-code
+GitHub|Git|GitHub Actions|Version Control
+API|APIs|REST API|API Integration|Webhooks
+Docker
+Digital Transformation|Finance Transformation|Process Improvement
+Data Analytics|Data Analysis|Dashboards|Dashboard
+Machine Learning|ML
+Data Visualization|Data Visualisation|Charting
+Technical Analysis|Technical Indicators
+Commodity|Commodities|Commodity Trading|Commodity Markets
+Web Development|Web Application|Web App
+Social Media|Social Media Marketing|Instagram
+Digital Marketing|Content Strategy|Content Creation
+Branding|Brand Building|Brand Management
