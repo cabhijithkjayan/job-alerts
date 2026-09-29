@@ -38,6 +38,25 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
                     "(KHTML, like Gecko) Chrome/124 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9"}
 
+ERRORS = []          # problems during this run -> Errors channel
+SEARCHES = [0]       # SerpApi searches used this run
+
+
+def has_word(text, words):
+    """True if any word/phrase appears as a WHOLE word (so 'intern' does not match 'internal')."""
+    t = (text or "").lower()
+    for w in words:
+        w = (w or "").lower().strip()
+        if w and re.search(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])", t):
+            return True
+    return False
+
+
+def report_error(msg):
+    print("  ! " + msg)
+    ERRORS.append(msg)
+
+
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 ROLE_PREFIXES = ("hr", "careers", "career", "jobs", "job", "recruit", "recruitment",
                  "talent", "hiring", "info", "contact", "enquir", "inquir", "admin",
@@ -221,10 +240,19 @@ def check_active(job):
 # ---------------------------------------------------------------- SerpApi
 def serpapi(params):
     params = {**params, "api_key": SERPAPI_KEY}
-    r = requests.get("https://serpapi.com/search.json", params=params, timeout=60)
+    SEARCHES[0] += 1
+    try:
+        r = requests.get("https://serpapi.com/search.json", params=params, timeout=60)
+    except requests.RequestException as ex:
+        report_error(f"SerpApi connection failed: {ex}")
+        return {}
     data = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
     if r.status_code != 200 or "error" in data:
-        print(f"  ! SerpApi: {data.get('error', r.status_code)}")
+        err = str(data.get("error", r.status_code))
+        if "hasn't returned any results" in err or "no results" in err.lower():
+            print(f"  (SerpApi: no results for {params.get('engine')})")
+        else:
+            report_error(f"SerpApi ({params.get('engine')}): {err}")
         return {}
     return data
 
@@ -402,18 +430,49 @@ def fmt_post(post, have, tags):
     return "\n".join(lines)
 
 
-def send(text):
+def send(text, chat=None):
     for _ in range(3):
         r = requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                          json={"chat_id": CHAT_ID, "text": text[:4000], "parse_mode": "HTML",
+                          json={"chat_id": chat or CHAT_ID, "text": text[:4000], "parse_mode": "HTML",
                                 "disable_web_page_preview": True}, timeout=30)
         if r.status_code == 429:
             time.sleep(r.json().get("parameters", {}).get("retry_after", 30) + 1)
             continue
         if not r.ok:
-            print(f"  ! Telegram {r.status_code}: {r.text[:200]}")
+            report_error(f"Telegram send to {chat or CHAT_ID} failed: {r.status_code} {r.text[:150]}")
         return r.ok
     return False
+
+
+def uae_now():
+    from datetime import datetime, timedelta, timezone
+    return datetime.now(timezone.utc) + timedelta(hours=4)
+
+
+def send_summary(cfg, full, counts, stats, max_age):
+    """Run report -> Summary channel; problems -> Errors channel."""
+    errors_chat, summary_chat = cfg.get("errors_chat_id"), cfg.get("summary_chat_id")
+    e = html.escape
+    if ERRORS and errors_chat:
+        body = "\n".join(f"• {e(x[:300])}" for x in ERRORS[:15])
+        send(f"⚠️ <b>Errors in job bot run</b> ({uae_now():%d %b %Y, %H:%M} UAE)\n{body}", errors_chat)
+    if summary_chat:
+        total = sum(counts.values())
+        lines = [f"📊 <b>{'Daily full search' if full else 'Quick check (Gmail + pasted posts)'}</b>",
+                 f"🕘 {uae_now():%d %b %Y, %H:%M} UAE", ""]
+        lines += [f"{k}: <b>{v}</b>" for k, v in counts.items() if full or v]
+        if not full and total == 0:
+            lines.append("Nothing new.")
+        if full:
+            lines += ["", f"🚫 Skipped - duplicates: {stats['dup']}, older than {max_age}d: {stats['old']}, "
+                          f"closed: {stats['closed']}, excluded: {stats['excluded']}"]
+        lines.append(f"🔎 SerpApi searches used: {SEARCHES[0]}")
+        lines.append(f"{'⚠️' if ERRORS else '✅'} Errors: {len(ERRORS)}" + (" (see Errors channel)" if ERRORS else ""))
+        r = requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                          json={"chat_id": summary_chat, "text": "\n".join(lines), "parse_mode": "HTML",
+                                "disable_notification": (not full and total == 0)}, timeout=30)
+        if not r.ok:
+            print("  ! summary send failed:", r.text[:150])
 
 
 def diagnose_telegram():
@@ -460,12 +519,15 @@ def main():
     run_keys = set()          # duplicates inside this same run
     sent = 0
     stats = {"old": 0, "dup": 0, "low": 0, "closed": 0, "excluded": 0}
+    all_chat = str(os.environ.get("ALL_JOBS_CHAT_ID") or cfg.get("all_jobs_chat_id") or "").strip()
+    all_chat = all_chat if all_chat and all_chat != str(CHAT_ID) else ""
+    print("All-jobs channel:", all_chat or "(not set - everything goes to Job Search)")
     # full search only at the daily 9 AM run (or manual run); other runs only check Gmail + bot inbox
     full = os.environ.get("RUN_SCHEDULE", "") in ("", cfg.get("daily_cron", "50 4 * * *"))
     print("Run type:", "FULL daily search" if full else "quick check (Gmail alerts + shared posts)")
 
     # ---------- 1. Google Jobs
-    matches = []
+    matches, others = [], []
     queries = ([combined_query(titles)] if cfg.get("combine_job_searches", True) else titles) if full else []
     for query in queries:
         for loc in cfg.get("locations", ["United Arab Emirates"]):
@@ -477,7 +539,7 @@ def main():
                     continue
                 run_keys |= keys
                 text = f"{job.get('title','')} {job.get('description','')}".lower()
-                if any(w in text for w in exclude):
+                if has_word(text, exclude):
                     stats["excluded"] += 1
                     continue
                 age = age_days((job.get("detected_extensions") or {}).get("posted_at", ""))
@@ -493,6 +555,7 @@ def main():
                     matches.append((score, job, have, miss, keys))
                 else:
                     stats["low"] += 1
+                    others.append((score, job, have, miss, keys))
 
     matches.sort(key=lambda m: m[0], reverse=True)
     lookups = 0
@@ -513,10 +576,34 @@ def main():
                 lookups += 1
         post_emails = clean_emails(EMAIL_RE.findall(job.get("description", "")), allow_personal=True)
         post_emails = list(dict.fromkeys(post_emails + page_emails))
-        if send(fmt_job(job, score, have, miss, info, post_emails, live, confirmed)):
+        msg = fmt_job(job, score, have, miss, info, post_emails, live, confirmed)
+        if send(msg):
             sent += 1
             seen |= keys
+            if all_chat:
+                time.sleep(2)
+                send(msg, all_chat)
         time.sleep(3)
+
+    # ---------- 1b. every other job found -> all-jobs channel (with its ATS %)
+    all_sent = 0
+    if all_chat:
+        others.sort(key=lambda m: m[0], reverse=True)
+        for score, job, have, miss, keys in others[: cfg.get("max_all_jobs_per_run", 25)]:
+            active, confirmed, live, page_emails = check_active(job)
+            if not active:
+                stats["closed"] += 1
+                seen |= keys
+                continue
+            info = company_info(job.get("company_name", ""), companies, job, allow_paid=False) \
+                if job.get("company_name") else None
+            post_emails = clean_emails(EMAIL_RE.findall(job.get("description", "")), allow_personal=True)
+            post_emails = list(dict.fromkeys(post_emails + page_emails))
+            if send(fmt_job(job, score, have, miss, info, post_emails, live, confirmed), all_chat):
+                all_sent += 1
+                seen |= keys
+            time.sleep(3)
+        print(f"All-jobs channel: {all_sent} other job(s) sent")
 
     # ---------- 2. LinkedIn hiring posts (public, via Google)
     li = cfg.get("linkedin", {})
@@ -545,13 +632,13 @@ def main():
                     continue
                 run_keys |= keys
                 low = body.lower()
-                if any(w in low for w in exclude + [x.lower() for x in li.get("exclude_phrases", [])]):
+                if has_word(low, exclude + li.get("exclude_phrases", [])):
                     stats["excluded"] += 1
                     continue
-                if li.get("require_any") and not any(x.lower() in low for x in li["require_any"]):
+                if li.get("require_any") and not has_word(low, li["require_any"]):
                     stats["low"] += 1   # not a hiring post (e.g. someone looking for a job)
                     continue
-                if li.get("require_location_any") and not any(x.lower() in low for x in li["require_location_any"]):
+                if li.get("require_location_any") and not has_word(low, li["require_location_any"]):
                     stats["excluded"] += 1   # not a UAE job
                     continue
                 nb = norm(body)
@@ -562,7 +649,7 @@ def main():
                     continue
                 if posts_sent >= li.get("max_posts_per_run", 10):
                     break
-                if send(fmt_post(post, have, [])):
+                if send(fmt_post(post, have, []), all_chat or None):
                     posts_sent += 1
                     seen |= keys
                 time.sleep(3)
@@ -577,8 +664,7 @@ def main():
             stats["dup"] += 1
             continue
         run_keys |= keys
-        if any(w in f"{job['title']} {job['company_name']}".lower() for w in
-               exclude + cfg.get("alert_exclude_words", [])):
+        if has_word(f"{job['title']} {job['company_name']}", exclude + cfg.get("alert_exclude_words", [])):
             stats["excluded"] += 1
             continue
         tl = f" {job['title'].lower()} "
@@ -590,14 +676,14 @@ def main():
                          f"<b>{e(job['title'])}</b>", f"🏢 {e(job['company_name'])}",
                          f"📍 {e(job['location'])}", "",
                          f'👉 <a href="{e(job["apply_options"][0]["link"], quote=True)}">Open in LinkedIn app</a>'])
-        if send(msg):
+        if send(msg, all_chat or None):
             alerts_sent += 1
             seen |= keys
         time.sleep(3)
 
     # ---------- 4. Posts you shared to the bot in Telegram - free
     shared_sent = 0
-    inbox, last_update = lii.bot_inbox(BOT_TOKEN, cfg.get("inbox_channel_ids", []), CHAT_ID,
+    inbox, last_update = lii.bot_inbox(BOT_TOKEN, cfg.get("inbox_channel_ids", []), [CHAT_ID, all_chat],
                                        cfg.get("inbox_any_channel", True))
     for m in inbox:
         body, li_links, first, scams = lii.split_shared(m["text"])
@@ -606,6 +692,7 @@ def main():
         if key in seen:
             reply = "Already saved earlier ✅"
         else:
+            score = None
             lines = ["📌 <b>Saved LinkedIn post</b>", f"<b>{e(first)}</b>"]
             if len(body) >= 150:
                 score, have, miss = ats_score(first, body, cv_norm, skills, titles)
@@ -623,11 +710,21 @@ def main():
             lines += email_block(ems, first)
             for l in li_links[:2]:
                 lines += ["", f'👉 <a href="{e(app_link(l), quote=True)}">Open in LinkedIn app</a>']
-            ok = send("\n".join(lines))
+            text_out = "\n".join(lines)
+            is_match = score is not None and score >= min_score
+            if all_chat:
+                ok = send(text_out, all_chat)
+                if ok and is_match:
+                    time.sleep(2)
+                    send(text_out)
+            else:
+                ok = send(text_out)
             if ok:
                 shared_sent += 1
                 seen.add(key)
-            reply = "Saved to your Job Search channel ✅" if ok else "Could not save - will retry next run"
+            where = "Job Search + all-jobs channel" if (is_match and all_chat) else ("all-jobs channel" if all_chat else "Job Search")
+            sc = f" (ATS {score}%)" if score is not None else ""
+            reply = f"Saved to {where}{sc} ✅" if ok else "Could not save - will retry next run"
         try:
             payload = {"chat_id": m["chat_id"], "text": reply, "disable_notification": True}
             if m.get("message_id"):
@@ -640,11 +737,20 @@ def main():
     print(f"LinkedIn alert emails sent: {alerts_sent}, shared posts saved: {shared_sent}")
 
     total = sent + posts_sent + alerts_sent + shared_sent
-    if full and total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0):
+    if full and total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0) \
+            and not cfg.get("summary_chat_id"):
         send(f"No new UAE jobs (ATS ≥ {min_score}%) or matching LinkedIn posts today.")
 
     save_json(SEEN_FILE, sorted(seen)[-8000:])
     save_json(COMPANY_FILE, companies)
+    ERRORS.extend(getattr(lii, "ERRORS", []))
+    send_summary(cfg, full, {
+        "🎯 ATS matches → Job Search": sent,
+        "📋 Other jobs → All jobs": locals().get("all_sent", 0),
+        "💼 LinkedIn alert emails": alerts_sent,
+        "🔗 LinkedIn hashtag posts": posts_sent,
+        "📌 Your pasted posts": shared_sent,
+    }, stats, max_age)
     print(f"\nSent {sent} job(s) + {posts_sent} LinkedIn post(s). Company lookups: {lookups}")
     print(f"Skipped - duplicates: {stats['dup']}, older than {max_age} days: {stats['old']}, "
           f"closed links: {stats['closed']}, low score: {stats['low']}, excluded: {stats['excluded']}")
@@ -654,4 +760,21 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as ex:
+        if ex.code not in (None, 0):
+            chat = load_json(CONFIG, {}).get("errors_chat_id")
+            if chat and BOT_TOKEN:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                              json={"chat_id": chat, "text": f"⚠️ Job bot stopped: {ex.code}"}, timeout=30)
+        raise
+    except Exception:
+        import traceback
+        tb = traceback.format_exc()
+        print(tb)
+        chat = load_json(CONFIG, {}).get("errors_chat_id")
+        if chat and BOT_TOKEN:
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                          json={"chat_id": chat, "text": "⚠️ Job bot crashed:\n" + tb[-3500:]}, timeout=30)
+        raise
