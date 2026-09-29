@@ -136,5 +136,47 @@
     ]
   },
   "combine_job_searches": true,
-  "your_name": "Abhijith K Jayan"
+  "your_name": "Abhijith K Jayan",
+  "alert_title_keywords": [
+    "account",
+    "finance",
+    "financial",
+    "fp&a",
+    "fpa",
+    "audit",
+    "tax",
+    "vat",
+    "controller",
+    "treasury",
+    "cost ",
+    "costing",
+    "budget",
+    "payroll",
+    "chartered",
+    " ca ",
+    "cfo",
+    "reporting",
+    "credit",
+    "billing",
+    "revenue",
+    "ifrs",
+    "fico",
+    "commercial analyst",
+    "business analyst"
+  ],
+  "alert_exclude_words": [
+    "sales",
+    "business development",
+    "key account",
+    "account executive - sales",
+    "marketing",
+    "customer success",
+    "relationship manager",
+    "insurance advisor",
+    "real estate",
+    "property consultant",
+    "leasing"
+  ],
+  "inbox_channel_ids": [],
+  "inbox_any_channel": true
 }
