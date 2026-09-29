@@ -73,5 +73,23 @@
   "address": "",
   "emails": [],
   "rating": ""
+ },
+ "wadan developments": {
+  "website": "https://ae.trabajo.org",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "info@trabajo.org"
+  ],
+  "rating": ""
+ },
+ "gradiant": {
+  "website": "https://ae.trabajo.org",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "info@trabajo.org"
+  ],
+  "rating": ""
  }
 }
