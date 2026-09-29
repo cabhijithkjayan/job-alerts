@@ -19,5 +19,29 @@
   "address": "Emirates Development Bank Building - 4th Floor - Port Saeed - Deira - Dubai",
   "emails": [],
   "rating": "4.3 (33 reviews)"
+ },
+ "simplysolved": {
+  "website": "https://www.simplysolved.com/",
+  "phone": "04 344 5338",
+  "address": "The Curve, Office M11, Building Sheikh Zayed Rd, Dubai",
+  "emails": [],
+  "rating": "4.9 (121 reviews)"
+ },
+ "bin saleh travel llc": {
+  "website": "https://www.binsalehtravel.com/",
+  "phone": "02 622 9900",
+  "address": "AL SOUQ TOWER C20 - UNIT 202 Al Amtar St - Al Danah - Zone 1 - Abu Dhabi",
+  "emails": [],
+  "rating": "4.2 (59 reviews)"
+ },
+ "sundus gulf": {
+  "website": "https://www.sundusglobal.com/",
+  "phone": "02 672 9100",
+  "address": "Prestige Tower 17, 18th Floor, شارع ٧٩, near Capital Mall - Mohamed Bin Zayed City - Abu Dhabi",
+  "emails": [
+   "info@sundusglobal.com",
+   "cv@sundusglobal.com"
+  ],
+  "rating": "4.4 (464 reviews)"
  }
 }
