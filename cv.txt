@@ -10,7 +10,8 @@ Auditing, Taxation, Financial Reporting, Financial Planning and Analysis (FP&A),
 statement preparation, statutory and internal audit, account reconciliation, revenue assurance, and compliance under Ind
 AS, IFRS, and GAAP. Proficient in financial analysis, risk assessment, internal controls, budgeting, forecasting, and investment
 planning, with advanced Excel and SAP expertise. Seeks to leverage strong technical and analytical grounding in Accounts,
-Finance, and Audit to drive accurate reporting and sound financial decision-making.
+Finance, and Audit to drive accurate reporting and sound financial decision-making. Combines finance expertise with handson AI and automation skills: builds AI agents and automated workflows using n8n, ChatGPT/OpenAI, Claude and GitHub to
+streamline reporting, reconciliations and decision-making.
 CORE COMPETENCIES / KEY SKILLS
 Accounting & Finance: Accounting, Financial Accounting, Corporate Finance, Financial Management, Financial Planning and
 Analysis (FP&A), Financial Reporting, Financial Statements Preparation, Balance Sheet, Profit & Loss (P&L) Statement, Cash
@@ -18,6 +19,10 @@ Flow Statement, General Ledger (GL), Accounts Receivable (AR), Accounts Payable 
 Reconciliation, Invoice Reconciliation, Debtors Ageing, Unbilled Revenue, Unearned Revenue, Working Capital Management,
 Cost Accounting, Costing, Budgeting, Forecasting, Variance Analysis, Revenue Assurance, Revenue Recognition, Revenue
 Reporting, Month-End Close, Quarter-End Close, MIS Reporting, Statutory Reporting, UAE VAT, Corporate Tax
+AI & Finance Automation: AI Integration, Generative AI, AI Agents, Agentic AI Workflows, Prompt Engineering, ChatGPT /
+OpenAI, Claude (Anthropic), Grok, n8n Workflow Automation, Process Automation, AI-assisted Development (Vibe Coding),
+Low-code / No-code Tools, API Integration, Webhooks, Telegram Bots, GitHub, GitHub Actions, Docker, Digital
+Transformation, Finance Process Automation, Dashboards.
 Audit & Compliance: Statutory Audit, Internal Audit, System Audit, Audit Associate, Audit Assistant, Auditing, Compliance,
 Regulatory Compliance, Company Law, Risk Assessment, Risk Management, Internal Controls, GST Filing, Taxation, Direct Tax,
 Indirect Tax, Statutory Compliance, User Acceptance Testing (UAT), Contract Review.
@@ -102,6 +107,24 @@ and societies.
 ● Handled accounting and taxation for private limited companies, individuals, firms, trusts, and societies.
 ● Performed general ledger review and auditing of various companies and firms, from vouching to finalization of
 accounts.
+PROJECTS
+AI Job-Search Agent | n8n, GitHub Actions, Python, Telegram Bot API, Google Jobs API
+● Built an automated system that searches UAE job listings daily and scores each role against a CV using ATS-style
+keyword matching.
+● Enriched shortlisted roles with public company data (website, contact details, address) and delivered them as realtime Telegram alerts.
+● Runs fully in the cloud on a schedule, with duplicate detection and API-usage controls.
+Finance Automation Workflows | n8n, Docker, REST APIs
+● Built and self-hosted automated workflows for exchange-rate tracking (INR/AED) and alerts.
+Cardamom Market Intelligence Dashboard | View
+● Built from scratch a TradingView-style charting platform for cardamom traders and auction market analysts.
+● Candlestick, area and line charts across 1D to 5Y timeframes, with 14 technical indicators (SMA, EMA, Bollinger
+Bands, RSI, MACD and more).
+● Auction lot data, supply/demand and net-flow analysis, with drill-down by price, auctioneer and market events.
+● Skills: data visualization, commodity price analytics, technical analysis, AI-assisted web development.
+Kala SpiceX: Brand Building & Social Media | View
+● Built and grew the brand's social media presence to 20M+ views through content strategy and digital marketing.
+● Drove brand awareness and customer reach for the spice trading business, alongside managing its finance function.
+● Skills: branding, content strategy, digital marketing, audience growth.
 EDUCATION
 ● MBA, Finance Management (Jan 2023 – Dec 2025) – DY Patil Vidyapeeth University, Pune – View
 ● B.Com, Accounting & Finance (Apr 2018 – Jan 2021) – Indira Gandhi Open University, Nagpur – View
