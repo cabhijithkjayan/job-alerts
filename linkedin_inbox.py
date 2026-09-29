@@ -15,6 +15,7 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", "")
 LINKEDIN_SENDERS = ("jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com",
                     "jobs-listings@linkedin.com")
 JOB_LINK = re.compile(r"linkedin\.com/(?:comm/)?jobs/view/(\d+)")
+ERRORS = []   # read by job_search.py -> Errors channel
 SCAM_WORDS = ("paid recruitment", "registration fee", "registration charges", "service charge",
               "processing fee", "visa charges", "pay for visa", "recruitment fee", "placement fee")
 
@@ -109,6 +110,7 @@ def gmail_linkedin_jobs(days=3):
         box.logout()
     except Exception as ex:
         print("  ! Gmail error:", ex)
+        ERRORS.append(f"Gmail: {ex} (check GMAIL_ADDRESS / GMAIL_APP_PASSWORD secrets)")
     return jobs
 
 
@@ -122,6 +124,7 @@ def bot_inbox(bot_token, inbox_chat_ids=(), output_chat_id=None, any_channel=Tru
                          timeout=30).json()
     except Exception as ex:
         print("  ! Telegram inbox error:", ex)
+        ERRORS.append(f"Telegram inbox: {ex}")
         return [], None
     inbox_ids = {str(i) for i in inbox_chat_ids if i}
     msgs, last = [], None
@@ -130,7 +133,8 @@ def bot_inbox(bot_token, inbox_chat_ids=(), output_chat_id=None, any_channel=Tru
         m = u.get("channel_post") or u.get("message") or {}
         chat = m.get("chat") or {}
         is_inbox = str(chat.get("id")) in inbox_ids or (
-            any_channel and chat.get("type") == "channel" and str(chat.get("id")) != str(output_chat_id))
+            any_channel and chat.get("type") == "channel"
+            and str(chat.get("id")) not in {str(x) for x in (output_chat_id if isinstance(output_chat_id, (list, tuple, set)) else [output_chat_id]) if x})
         if not (is_inbox or chat.get("type") == "private"):
             if chat.get("type") == "channel":
                 print(f"  (post in channel '{chat.get('title')}' id {chat.get('id')} ignored - "
