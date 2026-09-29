@@ -22,6 +22,8 @@ from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 
+import linkedin_inbox as lii
+
 BASE = Path(__file__).parent
 CONFIG = BASE / "config.json"
 CV_FILE = BASE / "cv.txt"
@@ -458,10 +460,13 @@ def main():
     run_keys = set()          # duplicates inside this same run
     sent = 0
     stats = {"old": 0, "dup": 0, "low": 0, "closed": 0, "excluded": 0}
+    # full search only at the daily 9 AM run (or manual run); other runs only check Gmail + bot inbox
+    full = os.environ.get("RUN_SCHEDULE", "") in ("", cfg.get("daily_cron", "50 4 * * *"))
+    print("Run type:", "FULL daily search" if full else "quick check (Gmail alerts + shared posts)")
 
     # ---------- 1. Google Jobs
     matches = []
-    queries = [combined_query(titles)] if cfg.get("combine_job_searches", True) else titles
+    queries = ([combined_query(titles)] if cfg.get("combine_job_searches", True) else titles) if full else []
     for query in queries:
         for loc in cfg.get("locations", ["United Arab Emirates"]):
             print(f"Searching: {query} | {loc}")
@@ -516,7 +521,7 @@ def main():
     # ---------- 2. LinkedIn hiring posts (public, via Google)
     li = cfg.get("linkedin", {})
     posts_sent = 0
-    if li.get("enabled") and (li.get("hashtags") or li.get("hashtag_groups")):
+    if full and li.get("enabled") and (li.get("hashtags") or li.get("hashtag_groups")):
         min_hits = li.get("min_keyword_matches", 2)
         groups = li.get("searches", [li.get("keywords", [])])
         if li.get("combine_searches", True):
@@ -562,8 +567,80 @@ def main():
                     seen |= keys
                 time.sleep(3)
 
-    total = sent + posts_sent
-    if total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0):
+    # ---------- 3. LinkedIn job-alert emails (Gmail) - free
+    alerts_sent = 0
+    for job in lii.gmail_linkedin_jobs(cfg.get("gmail_days", 3)):
+        if not job.get("title"):
+            continue
+        keys = job_keys(job) | {"l:" + job["linkedin_id"]}
+        if keys & (seen | run_keys):
+            stats["dup"] += 1
+            continue
+        run_keys |= keys
+        if any(w in f"{job['title']} {job['company_name']}".lower() for w in
+               exclude + cfg.get("alert_exclude_words", [])):
+            stats["excluded"] += 1
+            continue
+        tl = f" {job['title'].lower()} "
+        if cfg.get("alert_title_keywords") and not any(k in tl for k in cfg["alert_title_keywords"]):
+            stats["low"] += 1   # broad alert (e.g. "Jobs in UAE") - not a finance role
+            continue
+        e = html.escape
+        msg = "\n".join([f"💼 <b>LinkedIn Job Alert</b>",
+                         f"<b>{e(job['title'])}</b>", f"🏢 {e(job['company_name'])}",
+                         f"📍 {e(job['location'])}", "",
+                         f'👉 <a href="{e(job["apply_options"][0]["link"], quote=True)}">Open in LinkedIn app</a>'])
+        if send(msg):
+            alerts_sent += 1
+            seen |= keys
+        time.sleep(3)
+
+    # ---------- 4. Posts you shared to the bot in Telegram - free
+    shared_sent = 0
+    inbox, last_update = lii.bot_inbox(BOT_TOKEN, cfg.get("inbox_channel_ids", []), CHAT_ID,
+                                       cfg.get("inbox_any_channel", True))
+    for m in inbox:
+        body, li_links, first, scams = lii.split_shared(m["text"])
+        key = "s:" + h(" ".join(norm(body).split()[:40]) or (li_links[0] if li_links else m["text"]))
+        e = html.escape
+        if key in seen:
+            reply = "Already saved earlier ✅"
+        else:
+            lines = ["📌 <b>Saved LinkedIn post</b>", f"<b>{e(first)}</b>"]
+            if len(body) >= 150:
+                score, have, miss = ats_score(first, body, cv_norm, skills, titles)
+                lines.append(f"<i>{e(body[:450])}{'…' if len(body) > 450 else ''}</i>")
+                lines.append(f"🎯 <b>ATS match: {score}%</b>")
+                if have:
+                    lines.append(f"✅ {e(', '.join(have[:8]))}")
+                if miss:
+                    lines.append(f"⚠️ Missing: {e(', '.join(miss[:6]))}")
+            elif body:
+                lines.append(f"<i>{e(body[:450])}</i>")
+            if scams:
+                lines.append(f"🚩 <b>Warning:</b> mentions {e(', '.join(scams))} - UAE law does not allow charging job seekers.")
+            ems = clean_emails(EMAIL_RE.findall(body), allow_personal=True)
+            lines += email_block(ems, first)
+            for l in li_links[:2]:
+                lines += ["", f'👉 <a href="{e(app_link(l), quote=True)}">Open in LinkedIn app</a>']
+            ok = send("\n".join(lines))
+            if ok:
+                shared_sent += 1
+                seen.add(key)
+            reply = "Saved to your Job Search channel ✅" if ok else "Could not save - will retry next run"
+        try:
+            payload = {"chat_id": m["chat_id"], "text": reply, "disable_notification": True}
+            if m.get("message_id"):
+                payload["reply_parameters"] = {"message_id": m["message_id"], "allow_sending_without_reply": True}
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json=payload, timeout=20)
+        except Exception:
+            pass
+        time.sleep(2)
+    lii.ack_inbox(BOT_TOKEN, last_update)
+    print(f"LinkedIn alert emails sent: {alerts_sent}, shared posts saved: {shared_sent}")
+
+    total = sent + posts_sent + alerts_sent + shared_sent
+    if full and total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0):
         send(f"No new UAE jobs (ATS ≥ {min_score}%) or matching LinkedIn posts today.")
 
     save_json(SEEN_FILE, sorted(seen)[-8000:])
