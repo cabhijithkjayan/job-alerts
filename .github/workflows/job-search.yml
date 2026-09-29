@@ -2,7 +2,7 @@ name: UAE Job Alerts
 
 on:
   schedule:
-    - cron: "30 3 * * *"   # 9:00 AM India time, every day
+    - cron: "50 4 * * *"   # 04:50 UTC = 8:50 AM UAE (GitHub can start a few minutes late, so messages arrive around 9 AM)
   workflow_dispatch:
 
 permissions:
@@ -12,8 +12,8 @@ jobs:
   search:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install requests
