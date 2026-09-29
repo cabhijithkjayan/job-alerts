@@ -1,14 +1,99 @@
 {
   "job_titles": [
     "Finance Manager",
-    "Accounts Manager",
     "Senior Accountant",
     "FP&A Analyst"
   ],
-  "locations": ["United Arab Emirates"],
+  "locations": [
+    "United Arab Emirates"
+  ],
   "min_ats_score": 70,
-  "exclude_words": ["intern", "internship", "articleship", "trainee", "uae nationals only", "emirati nationals only", "emiratis only", "arabic speaker only"],
+  "max_job_age_days": 15,
+  "exclude_words": [
+    "intern",
+    "internship",
+    "articleship",
+    "trainee",
+    "uae nationals only",
+    "emirati nationals only",
+    "emiratis only",
+    "emirati talent",
+    "(uaen)",
+    "arabic speaker only",
+    "key accounts manager",
+    "key account manager"
+  ],
   "max_jobs_per_run": 15,
-  "max_company_lookups_per_run": 3,
-  "notify_when_empty": true
+  "max_company_lookups_per_run": 0,
+  "notify_when_empty": true,
+  "linkedin": {
+    "enabled": true,
+    "hashtags": [
+      "#UAEJobs",
+      "#DubaiJobs",
+      "#AbuDhabiJobs",
+      "#HiringInUAE",
+      "#OpenToWork",
+      "#JobSeekerUAE",
+      "#DubaiCareers",
+      "#MiddleEastJobs",
+      "#CareersUAE"
+    ],
+    "searches": [
+      [
+        "finance manager",
+        "accounts manager",
+        "financial controller",
+        "finance executive"
+      ],
+      [
+        "senior accountant",
+        "accountant",
+        "FP&A",
+        "financial analyst"
+      ]
+    ],
+    "max_age_days": 15,
+    "min_keyword_matches": 2,
+    "max_posts_per_run": 10,
+    "combine_searches": true,
+    "require_any": [
+      "hiring",
+      "we are looking",
+      "we're looking",
+      "vacancy",
+      "vacancies",
+      "job opening",
+      "opening",
+      "position",
+      "join our team",
+      "apply",
+      "send your cv",
+      "send cv",
+      "share your cv",
+      "share cv",
+      "immediate joiner",
+      "recruiting"
+    ],
+    "exclude_phrases": [
+      "i am looking for",
+      "i'm looking for",
+      "i am seeking",
+      "i'm seeking",
+      "looking for a new",
+      "looking for new opportunities",
+      "looking for opportunities",
+      "open to new opportunities",
+      "seeking opportunities",
+      "seeking a role",
+      "my resume",
+      "my cv",
+      "#opentowork i",
+      "please help me",
+      "actively looking",
+      "available for immediate"
+    ]
+  },
+  "combine_job_searches": true,
+  "your_name": "Abhijith K Jayan"
 }
