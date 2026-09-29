@@ -1,22 +1,24 @@
 """
 UAE Job Alerts -> Telegram
 --------------------------
-1. Searches Google Jobs (SerpApi) for each title in config.json, UAE only.
-2. Scores every job against your CV (cv.txt) - ATS-style keyword match.
-3. Keeps only jobs with score >= min_ats_score (default 70).
-4. Looks up public company info: website, phone, address (Google Maps via
-   SerpApi) and role-based emails (hr@, careers@, info@ ...) from the
-   company website and the job post.
-5. Sends each job as a separate Telegram message.
-6. Remembers jobs already sent (seen_jobs.json) and companies already
-   looked up (companies.json) so nothing repeats and API usage stays low.
+1. Google Jobs (SerpApi) search for each title in config.json - UAE only.
+2. Public LinkedIn hiring posts found via Google (hashtags in config.json).
+3. ATS-style score vs cv.txt - only jobs >= min_ats_score are sent.
+4. Freshness: skips jobs older than max_job_age_days.
+5. Active check: opens each apply link; drops jobs whose links are dead or
+   say "no longer accepting applications" / "position filled" etc.
+6. No duplicates: remembers every job, apply link, LinkedIn post and post
+   text already sent (seen_jobs.json) - even if the same job shows up again
+   on another site or with a slightly different title.
+7. Public company info (website, phone, address, role emails) - cached in
+   companies.json so each company costs only one lookup ever.
 
-GitHub Secrets needed: SERPAPI_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+GitHub Secrets: SERPAPI_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 """
 
 import hashlib, html, json, os, re, sys, time
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 
@@ -31,7 +33,8 @@ SERPAPI_KEY = os.environ.get("SERPAPI_KEY", "")
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/124 Safari/537.36"}
+                    "(KHTML, like Gecko) Chrome/124 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9"}
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 ROLE_PREFIXES = ("hr", "careers", "career", "jobs", "job", "recruit", "recruitment",
@@ -39,6 +42,24 @@ ROLE_PREFIXES = ("hr", "careers", "career", "jobs", "job", "recruit", "recruitme
                  "people", "cv", "resume", "apply", "vacanc", "hello", "office")
 BAD_EMAIL_PARTS = ("example.", "sentry", "wixpress", ".png", ".jpg", ".jpeg", ".gif",
                    ".webp", ".svg", "domain.com", "email.com", "yourname", "@2x")
+CLOSED_PHRASES = ("no longer accepting applications", "no longer available",
+                  "job has expired", "this job has expired", "job is closed",
+                  "position has been filled", "position is filled", "vacancy has been filled",
+                  "this job is no longer", "job posting has expired", "posting is closed",
+                  "applications are closed", "this position is closed", "job not found",
+                  "the job you are looking for", "no longer open")
+JOB_BOARDS = ("linkedin.", "indeed.", "bayt.", "naukrigulf.", "naukri.", "glassdoor.", "gulftalent.",
+              "monster", "foundit.", "dubizzle.", "jooble.", "talent.com", "ziprecruiter.",
+              "google.", "jobleads.", "jobrapido.", "careerjet.", "whatjobs.", "simplyhired.",
+              "adzuna.", "jobs.ae", "drjobpro.", "laimoon.", "gulfjobs", "michaelpage.",
+              "hays.", "roberthalf.", "ae.jobsdb", "tanqeeb.", "wuzzuf.", "workable.com",
+              "lever.co", "greenhouse.io", "smartrecruiters.", "myworkdayjobs.", "bamboohr.",
+              "zohorecruit.", "recruitee.", "teamtailor.", "successfactors.", "oraclecloud.",
+              "icims.", "taleo.", "jobvite.", "ashbyhq.", "breezy.hr", "personio.")
+PHONE_RE = re.compile(r"(?:\+971|00971)[\s-]?\(?\d{1,2}\)?[\s-]?\d{3}[\s-]?\d{4}")
+TITLE_NOISE = re.compile(r"\b(uae|dubai|abu dhabi|sharjah|ajman|remote|hybrid|urgent|urgently|"
+                         r"hiring|immediate|joiner|joining|required|needed|wanted|vacancy|"
+                         r"m/f|f/m|full time|full-time|contract|permanent|nationals?|uaen)\b")
 
 
 # ---------------------------------------------------------------- helpers
@@ -57,14 +78,47 @@ def norm(text):
     return " " + re.sub(r"[^a-z0-9+#&]+", " ", (text or "").lower()) + " "
 
 
-def job_key(job):
-    raw = f"{job.get('title','')}|{job.get('company_name','')}|{job.get('location','')}".lower()
-    return hashlib.sha1(raw.encode()).hexdigest()[:16]
+def h(text):
+    return hashlib.sha1(text.encode()).hexdigest()[:16]
+
+
+def clean_url(url):
+    """Strip tracking parameters so the same link always looks the same."""
+    try:
+        p = urlparse(url)
+        return urlunparse((p.scheme, p.netloc.lower(), p.path.rstrip("/"), "", "", ""))
+    except Exception:
+        return url
+
+
+def company_norm(name):
+    n = norm(name)
+    n = re.sub(r"\b(llc|l l c|fze|fzco|fz llc|dmcc|ltd|limited|group|co|company|inc|plc|"
+               r"pjsc|psc|est|establishment|the)\b", " ", n)
+    return " ".join(n.split())
+
+
+def title_norm(title):
+    t = TITLE_NOISE.sub(" ", norm(title).replace("&", " and "))
+    t = re.sub(r"\b(sr)\b", "senior", t)
+    return " ".join(sorted(set(w for w in t.split() if len(w) > 1)))
+
+
+def job_keys(job):
+    """Several fingerprints - a job is a duplicate if ANY of them was seen before."""
+    keys = {
+        "j:" + h(f"{title_norm(job.get('title',''))}|{company_norm(job.get('company_name',''))}"),
+        # legacy key from the first version (so earlier sends are still remembered)
+        h(f"{job.get('title','')}|{job.get('company_name','')}|{job.get('location','')}".lower()),
+    }
+    for o in job.get("apply_options") or []:
+        if o.get("link"):
+            keys.add("u:" + h(clean_url(o["link"])))
+    return keys
 
 
 # ---------------------------------------------------------------- ATS score
 def load_skills():
-    """skills.txt: one skill per line. Synonyms separated by | (first is the label)."""
     skills = []
     for line in SKILLS_FILE.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -79,37 +133,76 @@ def found(variants, ntext):
     return any(f" {norm(v).strip()} " in ntext for v in variants)
 
 
-def ats_score(job, cv_norm, skills, target_titles):
-    """
-    Score 0-100, like an ATS keyword screen:
-      70% = of the skills this job asks for, how many are on your CV
-      30% = how well the job title matches your target titles
-    """
-    jd = norm(f"{job.get('title','')} {job.get('description','')} "
-              f"{' '.join(h for hl in job.get('job_highlights', []) for h in hl.get('items', []))}")
+def ats_score(title, text, cv_norm, skills, target_titles):
+    """70% skills overlap (of the skills the job asks for) + 30% title match."""
+    jd = norm(f"{title} {text}")
     job_skills = [(label, v) for label, v in skills if found(v, jd)]
     have = [label for label, v in job_skills if found(v, cv_norm)]
     missing = [label for label, v in job_skills if label not in have]
+    skill_pct = len(have) / len(job_skills) if len(job_skills) >= 3 else 0.6
 
-    if len(job_skills) >= 3:
-        skill_pct = len(have) / len(job_skills)
-    else:  # job ad too short to judge on skills - be neutral
-        skill_pct = 0.6
-
-    title_n = norm(job.get("title", ""))
+    title_n = norm(title)
     title_pct = 0.0
     for t in target_titles:
         words = [w for w in norm(t).split() if len(w) > 2]
-        if not words:
+        if words:
+            title_pct = max(title_pct, sum(f" {w} " in title_n for w in words) / len(words))
+    return round(100 * (0.7 * skill_pct + 0.3 * title_pct)), have, missing
+
+
+# ---------------------------------------------------------------- freshness & active check
+def age_days(posted_at):
+    """'3 hours ago' -> 0, '5 days ago' -> 5, '30+ days ago' -> 30, 'Sep 20, 2026' -> days since, unknown -> None."""
+    if not posted_at:
+        return None
+    s = posted_at.lower()
+    from datetime import datetime, date
+    for f in ("%b %d, %Y", "%d %b %Y", "%B %d, %Y"):
+        try:
+            return (date.today() - datetime.strptime(posted_at.strip(), f).date()).days
+        except ValueError:
+            pass
+    m = re.search(r"(\d+)\+?\s*(minute|hour|day|week|month)", s)
+    if not m:
+        return 0 if ("today" in s or "just" in s) else None
+    n, unit = int(m.group(1)), m.group(2)
+    return {"minute": 0, "hour": 0, "day": n, "week": n * 7, "month": n * 30}[unit]
+
+
+def link_status(url):
+    """('open'|'closed'|'unknown', page_text). 'unknown' = site blocks bots - we keep those."""
+    try:
+        r = requests.get(url, headers=UA, timeout=12, allow_redirects=True)
+    except requests.RequestException:
+        return "unknown", ""
+    if r.status_code in (404, 410):
+        return "closed", ""
+    if r.status_code != 200:
+        return "unknown", ""
+    text = r.text[:400000]
+    if any(p in text.lower() for p in CLOSED_PHRASES):
+        return "closed", ""
+    return "open", text
+
+
+def check_active(job):
+    """Returns (is_active, confirmed_open, live_links, emails_found_on_apply_pages)."""
+    links = [o for o in (job.get("apply_options") or []) if o.get("link")][:4]
+    if not links:
+        return True, False, [], []
+    live, confirmed, closed, emails = [], False, 0, []
+    for o in links:
+        st, page = link_status(o["link"])
+        if st == "closed":
+            closed += 1
             continue
-        hit = sum(1 for w in words if f" {w} " in title_n) / len(words)
-        title_pct = max(title_pct, hit)
+        live.append(o)
+        confirmed = confirmed or st == "open"
+        emails += EMAIL_RE.findall(page)
+    return (closed < len(links)), confirmed, live, clean_emails(emails, allow_personal=True)[:4]
 
-    score = round(100 * (0.7 * skill_pct + 0.3 * title_pct))
-    return score, have, missing
 
-
-# ---------------------------------------------------------------- job search
+# ---------------------------------------------------------------- SerpApi
 def serpapi(params):
     params = {**params, "api_key": SERPAPI_KEY}
     r = requests.get("https://serpapi.com/search.json", params=params, timeout=60)
@@ -120,10 +213,24 @@ def serpapi(params):
     return data
 
 
+def combined_query(titles):
+    return " OR ".join(titles)
+
+
 def search_jobs(query, location):
-    data = serpapi({"engine": "google_jobs", "q": query, "location": location,
-                    "gl": "ae", "hl": "en"})
-    return data.get("jobs_results", [])
+    return serpapi({"engine": "google_jobs", "q": query, "location": location,
+                    "gl": "ae", "hl": "en"}).get("jobs_results", [])
+
+
+def search_linkedin_posts(hashtags, keywords, days):
+    tags = " OR ".join(f'"{t}"' for t in hashtags)
+    kws = " OR ".join(f'"{k}"' for k in keywords)
+    q = f'site:linkedin.com/posts ({tags}) ({kws})'
+    from datetime import date, timedelta
+    since = date.today() - timedelta(days=days)
+    tbs = f"cdr:1,cd_min:{since:%m/%d/%Y},cd_max:{date.today():%m/%d/%Y}"  # exact date range
+    return serpapi({"engine": "google", "q": q, "gl": "ae", "hl": "en",
+                    "num": 20, "tbs": tbs}).get("organic_results", [])
 
 
 # ---------------------------------------------------------------- company info
@@ -133,8 +240,7 @@ def clean_emails(emails, allow_personal=False):
         e = e.strip(".").lower()
         if any(b in e for b in BAD_EMAIL_PARTS):
             continue
-        local = e.split("@")[0]
-        if not allow_personal and not local.startswith(ROLE_PREFIXES):
+        if not allow_personal and not e.split("@")[0].startswith(ROLE_PREFIXES):
             continue
         if e not in out:
             out.append(e)
@@ -142,13 +248,10 @@ def clean_emails(emails, allow_personal=False):
 
 
 def emails_from_site(website):
-    """Public role-based emails from the company's homepage / contact / careers pages."""
     found_emails = []
     if not website:
         return found_emails
-    pages = [website] + [urljoin(website, p) for p in
-                         ("/contact", "/contact-us", "/careers", "/contactus")]
-    for url in pages:
+    for url in [website] + [urljoin(website, p) for p in ("/contact", "/contact-us", "/careers")]:
         try:
             r = requests.get(url, headers=UA, timeout=12)
             if r.ok and "text/html" in r.headers.get("content-type", ""):
@@ -160,10 +263,43 @@ def emails_from_site(website):
     return clean_emails(found_emails)[:4]
 
 
-def company_info(name, cache):
-    key = name.lower().strip()
+def own_site(job):
+    """If an apply link is on the company's own site (not a job board), return its homepage."""
+    for o in job.get("apply_options") or []:
+        host = urlparse(o.get("link", "")).netloc.lower()
+        if host and not any(b in host for b in JOB_BOARDS):
+            return f"https://{host.split('careers.')[-1].split('jobs.')[-1]}"
+    return ""
+
+
+def free_company_info(website):
+    """Emails + UAE phone numbers from the company website - costs no SerpApi search."""
+    info = {"website": website, "phone": "", "address": "", "emails": [], "rating": ""}
+    phones, emails = [], []
+    for url in [website] + [urljoin(website, p) for p in ("/contact", "/contact-us", "/careers")]:
+        try:
+            r = requests.get(url, headers=UA, timeout=12)
+            if r.ok and "text/html" in r.headers.get("content-type", ""):
+                emails += EMAIL_RE.findall(r.text)
+                phones += PHONE_RE.findall(r.text)
+        except requests.RequestException:
+            pass
+    info["emails"] = clean_emails(emails)[:4]
+    info["phone"] = phones[0] if phones else ""
+    return info
+
+
+def company_info(name, cache, job=None, allow_paid=True):
+    key = company_norm(name)
     if key in cache:
         return cache[key]
+    site = own_site(job or {})
+    if site:
+        info = free_company_info(site)
+        cache[key] = info
+        return info
+    if not allow_paid:
+        return None
     info = {"website": "", "phone": "", "address": "", "emails": [], "rating": ""}
     data = serpapi({"engine": "google_maps", "q": f"{name} UAE", "type": "search",
                     "hl": "en", "gl": "ae"})
@@ -180,7 +316,19 @@ def company_info(name, cache):
 
 
 # ---------------------------------------------------------------- telegram
-def fmt(job, score, have, missing, info, post_emails):
+YOUR_NAME = "Abhijith K Jayan"
+
+
+def email_block(emails, title):
+    e = html.escape
+    if not emails:
+        return []
+    out = ["", "<b>📧 Email your CV to:</b>"] + [f"✉️ {e(m)}" for m in emails[:5]]
+    out.append(f"<i>Subject: Application – {e(title)} – {e(YOUR_NAME)}</i>")
+    return out
+
+
+def fmt_job(job, score, have, missing, info, post_emails, links, confirmed):
     e = html.escape
     ext = job.get("detected_extensions", {}) or {}
     lines = [f"<b>{e(job.get('title', 'Untitled'))}</b>",
@@ -190,36 +338,48 @@ def fmt(job, score, have, missing, info, post_emails):
                                   ext.get("salary", "")] if x)
     if meta:
         lines.append(f"🕒 {e(meta)}")
+    lines.append("🟢 Apply link checked: open" if confirmed else "🟡 Active on Google Jobs")
     lines.append(f"🎯 <b>ATS match: {score}%</b>")
     if have:
         lines.append(f"✅ {e(', '.join(have[:8]))}")
     if missing:
         lines.append(f"⚠️ Missing: {e(', '.join(missing[:6]))}")
-
-    links = job.get("apply_options") or []
     if links:
         lines += ["", "<b>Apply links:</b>"]
         for o in links[:5]:
-            if o.get("link"):
-                lines.append(f'• <a href="{e(o["link"], quote=True)}">{e(o.get("title", "Apply"))}</a>')
+            lines.append(f'• <a href="{e(o["link"], quote=True)}">{e(o.get("title", "Apply"))}</a>')
     elif job.get("share_link"):
         lines += ["", f'<a href="{e(job["share_link"], quote=True)}">View job</a>']
 
     emails = list(dict.fromkeys(post_emails + (info or {}).get("emails", [])))
-    if info and any([info.get("website"), info.get("phone"), info.get("address"), emails]):
+    lines += email_block(emails, job.get("title", ""))
+    if info and any([info.get("website"), info.get("phone"), info.get("address")]):
         lines += ["", "<b>Company info:</b>"]
         if info.get("website"):
-            lines.append(f'🌐 <a href="{e(info["website"], quote=True)}">{e(urlparse(info["website"]).netloc or info["website"])}</a>')
+            lines.append(f'🌐 <a href="{e(info["website"], quote=True)}">'
+                         f'{e(urlparse(info["website"]).netloc or info["website"])}</a>')
         if info.get("phone"):
             lines.append(f"📞 {e(info['phone'])}")
-        for m in emails[:4]:
-            lines.append(f"✉️ {e(m)}")
         if info.get("address"):
             lines.append(f"🏠 {e(info['address'])}")
         if info.get("rating"):
             lines.append(f"⭐ {e(info['rating'])}")
-    elif emails:
-        lines += ["", "<b>Contact:</b>"] + [f"✉️ {e(m)}" for m in emails[:4]]
+    return "\n".join(lines)
+
+
+def fmt_post(post, have, tags):
+    e = html.escape
+    title = post.get("title", "LinkedIn post")
+    snippet = post.get("snippet", "")
+    date = post.get("date", "")
+    emails = clean_emails(EMAIL_RE.findall(f"{title} {snippet}"), allow_personal=True)
+    lines = ["🔗 <b>LinkedIn hiring post</b>" + (f" · {e(date)}" if date else ""),
+             f"<b>{e(title)}</b>",
+             f"<i>{e(snippet[:500])}</i>"]
+    if have:
+        lines.append(f"🎯 Matched: {e(', '.join(have[:8]))}")
+    lines += ["", f'👉 <a href="{e(post["link"], quote=True)}">Open LinkedIn post</a>']
+    lines += email_block(emails, title.split("|")[0].split(" - ")[0].strip()[:80])
     return "\n".join(lines)
 
 
@@ -237,6 +397,29 @@ def send(text):
     return False
 
 
+def diagnose_telegram():
+    print("\n=== Telegram check ===")
+    print(f"TELEGRAM_CHAT_ID currently set to: {CHAT_ID!r}")
+    try:
+        me = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getMe", timeout=20).json()
+        print("Bot:", "@" + me.get("result", {}).get("username", "?") if me.get("ok") else me)
+        ups = requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates", timeout=20).json()
+        chats = {}
+        for u in ups.get("result", []):
+            for key in ("channel_post", "message", "my_chat_member", "chat_member"):
+                if key in u:
+                    c = u[key]["chat"]
+                    chats[c["id"]] = f'{c.get("title") or c.get("first_name")} ({c["type"]})'
+        if chats:
+            print("Chats this bot can see (use the channel's number as TELEGRAM_CHAT_ID):")
+            for cid, name in chats.items():
+                print(f"   {cid}  ->  {name}")
+        else:
+            print("The bot sees no chats. Add it as ADMIN in the channel, post a message, run again.")
+    except Exception as ex:
+        print("Could not check Telegram:", ex)
+
+
 # ---------------------------------------------------------------- main
 def main():
     missing = [n for n, v in [("SERPAPI_KEY", SERPAPI_KEY), ("TELEGRAM_BOT_TOKEN", BOT_TOKEN),
@@ -251,52 +434,125 @@ def main():
     skills = load_skills()
     titles = cfg.get("job_titles", [])
     min_score = cfg.get("min_ats_score", 70)
+    max_age = cfg.get("max_job_age_days", 14)
     exclude = [w.lower() for w in cfg.get("exclude_words", [])]
     seen = set(load_json(SEEN_FILE, []))
     companies = load_json(COMPANY_FILE, {})
+    run_keys = set()          # duplicates inside this same run
+    sent = 0
+    stats = {"old": 0, "dup": 0, "low": 0, "closed": 0, "excluded": 0}
 
+    # ---------- 1. Google Jobs
     matches = []
-    for title in titles:
+    queries = [combined_query(titles)] if cfg.get("combine_job_searches", True) else titles
+    for query in queries:
         for loc in cfg.get("locations", ["United Arab Emirates"]):
-            print(f"Searching: {title} | {loc}")
-            for job in search_jobs(title, loc):
-                k = job_key(job)
-                if k in seen:
+            print(f"Searching: {query} | {loc}")
+            for job in search_jobs(query, loc):
+                keys = job_keys(job)
+                if keys & (seen | run_keys):
+                    stats["dup"] += 1
                     continue
-                seen.add(k)
+                run_keys |= keys
                 text = f"{job.get('title','')} {job.get('description','')}".lower()
                 if any(w in text for w in exclude):
+                    stats["excluded"] += 1
                     continue
-                score, have, miss = ats_score(job, cv_norm, skills, titles)
+                age = age_days((job.get("detected_extensions") or {}).get("posted_at", ""))
+                if age is not None and age > max_age:
+                    stats["old"] += 1
+                    continue
+                hl = " ".join(i for x in job.get("job_highlights", []) for i in x.get("items", []))
+                score, have, miss = ats_score(job.get("title", ""),
+                                              f"{job.get('description','')} {hl}",
+                                              cv_norm, skills, titles)
                 print(f"  {score:3d}%  {job.get('title')} - {job.get('company_name')}")
                 if score >= min_score:
-                    matches.append((score, job, have, miss))
+                    matches.append((score, job, have, miss, keys))
+                else:
+                    stats["low"] += 1
 
     matches.sort(key=lambda m: m[0], reverse=True)
-    matches = matches[: cfg.get("max_jobs_per_run", 15)]
-    print(f"Matches >= {min_score}%: {len(matches)}")
-
     lookups = 0
-    sent = 0
-    for score, job, have, miss in matches:
+    for score, job, have, miss, keys in matches[: cfg.get("max_jobs_per_run", 15)]:
+        active, confirmed, live, page_emails = check_active(job)
+        if not active:
+            print(f"  x closed: {job.get('title')} - {job.get('company_name')}")
+            stats["closed"] += 1
+            seen |= keys
+            continue
         info = None
         name = job.get("company_name", "")
-        if name and (name.lower().strip() in companies or
-                     lookups < cfg.get("max_company_lookups_per_run", 5)):
-            if name.lower().strip() not in companies:
+        if name:
+            paid_ok = lookups < cfg.get("max_company_lookups_per_run", 1)
+            before = len(companies)
+            info = company_info(name, companies, job, allow_paid=paid_ok)
+            if len(companies) > before and not own_site(job):
                 lookups += 1
-            info = company_info(name, companies)
         post_emails = clean_emails(EMAIL_RE.findall(job.get("description", "")), allow_personal=True)
-        if send(fmt(job, score, have, miss, info, post_emails)):
+        post_emails = list(dict.fromkeys(post_emails + page_emails))
+        if send(fmt_job(job, score, have, miss, info, post_emails, live, confirmed)):
             sent += 1
+            seen |= keys
         time.sleep(3)
 
-    if sent == 0 and cfg.get("notify_when_empty", True):
-        send(f"No new UAE jobs with ATS ≥ {min_score}% today.")
+    # ---------- 2. LinkedIn hiring posts (public, via Google)
+    li = cfg.get("linkedin", {})
+    posts_sent = 0
+    if li.get("enabled") and li.get("hashtags"):
+        min_hits = li.get("min_keyword_matches", 2)
+        groups = li.get("searches", [li.get("keywords", [])])
+        if li.get("combine_searches", True):
+            groups = [[k for g in groups for k in g]]
+        for group in groups:
+            print(f"LinkedIn posts: {li['hashtags']} + {group}")
+            for post in search_linkedin_posts(li["hashtags"], group, li.get("max_age_days", 7)):
+                link = post.get("link", "")
+                if "linkedin.com" not in link:
+                    continue
+                age = age_days(post.get("date", ""))
+                if age is not None and age > li.get("max_age_days", 15):
+                    stats["old"] += 1
+                    continue
+                body = f"{post.get('title','')} {post.get('snippet','')}"
+                keys = {"p:" + h(clean_url(link)),
+                        "t:" + h(" ".join(norm(post.get("snippet", "")).split()[:30]))}
+                if keys & (seen | run_keys):
+                    stats["dup"] += 1
+                    continue
+                run_keys |= keys
+                low = body.lower()
+                if any(w in low for w in exclude + [x.lower() for x in li.get("exclude_phrases", [])]):
+                    stats["excluded"] += 1
+                    continue
+                if li.get("require_any") and not any(x.lower() in low for x in li["require_any"]):
+                    stats["low"] += 1   # not a hiring post (e.g. someone looking for a job)
+                    continue
+                nb = norm(body)
+                have = [label for label, v in skills if found(v, nb) and found(v, cv_norm)]
+                title_hit = any(all(f" {w} " in nb for w in norm(t).split()) for t in titles)
+                if len(have) + (2 if title_hit else 0) < min_hits:
+                    stats["low"] += 1
+                    continue
+                if posts_sent >= li.get("max_posts_per_run", 10):
+                    break
+                if send(fmt_post(post, have, li["hashtags"])):
+                    posts_sent += 1
+                    seen |= keys
+                time.sleep(3)
 
-    save_json(SEEN_FILE, sorted(seen)[-5000:])
+    total = sent + posts_sent
+    if total == 0 and cfg.get("notify_when_empty", True) and not (matches and sent == 0):
+        send(f"No new UAE jobs (ATS ≥ {min_score}%) or matching LinkedIn posts today.")
+
+    save_json(SEEN_FILE, sorted(seen)[-8000:])
     save_json(COMPANY_FILE, companies)
-    print(f"Sent {sent} job(s). Company lookups used: {lookups}")
+    print(f"\nSent {sent} job(s) + {posts_sent} LinkedIn post(s). Company lookups: {lookups}")
+    print(f"Skipped - duplicates: {stats['dup']}, older than {max_age} days: {stats['old']}, "
+          f"closed links: {stats['closed']}, low score: {stats['low']}, excluded: {stats['excluded']}")
+    if matches and sent == 0 and posts_sent == 0 and stats["closed"] < len(matches):
+        diagnose_telegram()
+        sys.exit("Telegram delivery failed - see the chat list above.")
 
 
 if __name__ == "__main__":
