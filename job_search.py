@@ -29,6 +29,7 @@ CONFIG = BASE / "config.json"
 CV_FILE = BASE / "cv.txt"
 SEEN_FILE = BASE / "seen_jobs.json"
 COMPANY_FILE = BASE / "companies.json"
+USAGE_FILE = BASE / "usage.json"
 SKILLS_FILE = BASE / "skills.txt"
 
 SERPAPI_KEY = os.environ.get("SERPAPI_KEY", "")
@@ -458,7 +459,9 @@ def send_summary(cfg, full, counts, stats, max_age):
         send(f"⚠️ <b>Errors in job bot run</b> ({uae_now():%d %b %Y, %H:%M} UAE)\n{body}", errors_chat)
     if summary_chat:
         total = sum(counts.values())
-        lines = [f"📊 <b>{'Daily full search' if full else 'Quick check (Gmail + pasted posts)'}</b>",
+        if not full and total == 0 and not ERRORS:
+            return          # nothing happened in a quick check - don't clutter the Summary channel
+        lines = [f"📊 <b>{e(cfg.get('_run_label', 'Run'))}</b>",
                  f"🕘 {uae_now():%d %b %Y, %H:%M} UAE", ""]
         lines += [f"{k}: <b>{v}</b>" for k, v in counts.items() if full or v]
         if not full and total == 0:
@@ -466,7 +469,7 @@ def send_summary(cfg, full, counts, stats, max_age):
         if full:
             lines += ["", f"🚫 Skipped - duplicates: {stats['dup']}, older than {max_age}d: {stats['old']}, "
                           f"closed: {stats['closed']}, excluded: {stats['excluded']}"]
-        lines.append(f"🔎 SerpApi searches used: {SEARCHES[0]}")
+        lines.append(f"🔎 SerpApi searches used: {SEARCHES[0]} ({cfg.get('_usage', '')})")
         lines.append(f"{'⚠️' if ERRORS else '✅'} Errors: {len(ERRORS)}" + (" (see Errors channel)" if ERRORS else ""))
         r = requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
                           json={"chat_id": summary_chat, "text": "\n".join(lines), "parse_mode": "HTML",
@@ -523,8 +526,32 @@ def main():
     all_chat = all_chat if all_chat and all_chat != str(CHAT_ID) else ""
     print("All-jobs channel:", all_chat or "(not set - everything goes to Job Search)")
     # full search only at the daily 9 AM run (or manual run); other runs only check Gmail + bot inbox
-    full = os.environ.get("RUN_SCHEDULE", "") in ("", cfg.get("daily_cron", "50 4 * * *"))
-    print("Run type:", "FULL daily search" if full else "quick check (Gmail alerts + shared posts)")
+    inbox, last_update = lii.bot_inbox(BOT_TOKEN, cfg.get("inbox_channel_ids", []), [CHAT_ID, all_chat],
+                                       cfg.get("inbox_any_channel", True))
+    commands = [m for m in inbox if m.get("command") == "search"]
+    inbox = [m for m in inbox if not m.get("command")]
+    scheduled_full = os.environ.get("RUN_SCHEDULE", "") in ("", cfg.get("daily_cron", "50 4 * * *"))
+    full = scheduled_full or bool(commands)
+    run_label = ("Search on request (/search)" if commands and not scheduled_full
+                 else "Daily full search" if full else "Quick check (Gmail + pasted posts)")
+    print("Run type:", run_label)
+    for c in commands:
+        try:
+            payload = {"chat_id": c["chat_id"], "text": "🔎 Search started… results will appear in your channels shortly."}
+            if c.get("message_id"):
+                payload["reply_parameters"] = {"message_id": c["message_id"], "allow_sending_without_reply": True}
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json=payload, timeout=20)
+        except Exception:
+            pass
+    usage = load_json(USAGE_FILE, {})
+    month = uae_now().strftime("%Y-%m")
+    if usage.get("month") != month:
+        usage = {"month": month, "searches": 0}
+    budget = cfg.get("serpapi_monthly_budget", 240)
+    if full and usage["searches"] >= budget:
+        report_error(f"SerpApi monthly budget reached ({usage['searches']}/{budget}) - skipping paid searches "
+                     f"until next month. Gmail alerts and pasted posts still work.")
+        full = False
 
     # ---------- 1. Google Jobs
     matches, others = [], []
@@ -683,8 +710,6 @@ def main():
 
     # ---------- 4. Posts you shared to the bot in Telegram - free
     shared_sent = 0
-    inbox, last_update = lii.bot_inbox(BOT_TOKEN, cfg.get("inbox_channel_ids", []), [CHAT_ID, all_chat],
-                                       cfg.get("inbox_any_channel", True))
     for m in inbox:
         body, li_links, first, scams = lii.split_shared(m["text"])
         key = "s:" + h(" ".join(norm(body).split()[:40]) or (li_links[0] if li_links else m["text"]))
@@ -744,6 +769,10 @@ def main():
     save_json(SEEN_FILE, sorted(seen)[-8000:])
     save_json(COMPANY_FILE, companies)
     ERRORS.extend(getattr(lii, "ERRORS", []))
+    usage["searches"] = usage.get("searches", 0) + SEARCHES[0]
+    save_json(USAGE_FILE, usage)
+    cfg["_run_label"] = run_label
+    cfg["_usage"] = f"{usage['searches']}/{cfg.get('serpapi_monthly_budget', 240)} this month"
     send_summary(cfg, full, {
         "🎯 ATS matches → Job Search": sent,
         "📋 Other jobs → All jobs": locals().get("all_sent", 0),
