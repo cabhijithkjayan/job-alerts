@@ -184,5 +184,7 @@
   "all_jobs_chat_id": "-1004296140869",
   "max_all_jobs_per_run": 25,
   "errors_chat_id": "-1004352353621",
-  "summary_chat_id": "-1004326153889"
+  "summary_chat_id": "-1004326153889",
+  "daily_cron": "50 4 * * *",
+  "serpapi_monthly_budget": 240
 }
