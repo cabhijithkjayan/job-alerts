@@ -1,1 +1,23 @@
-{}
+{
+ "طيران الإمارات - غير ذلك": {
+  "website": "https://www.emirates.com/ae/english/help/offices/auh/abu-dhabi/?utm_source=google-maps&utm_medium=organic&utm_content=AUH",
+  "phone": "600 555555",
+  "address": "Al Sawari Tower - C, Corniche St, Al Khalidiyah - W8 - Abu Dhabi",
+  "emails": [],
+  "rating": "4.2 (963 reviews)"
+ },
+ "majid al futtaim": {
+  "website": "http://www.majidalfuttaim.com/",
+  "phone": "04 294 2444",
+  "address": "MAF Tower 2,8th Street,Deira,Near Deira City Centre, 8th St, Dubai",
+  "emails": [],
+  "rating": "4.5 (262 reviews)"
+ },
+ "rtc1 recruitment services": {
+  "website": "https://rtceng.com/",
+  "phone": "04 295 3440",
+  "address": "Emirates Development Bank Building - 4th Floor - Port Saeed - Deira - Dubai",
+  "emails": [],
+  "rating": "4.3 (33 reviews)"
+ }
+}
