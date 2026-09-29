@@ -21,24 +21,27 @@
     "(uaen)",
     "arabic speaker only",
     "key accounts manager",
-    "key account manager"
+    "key account manager",
+    "junior accountant",
+    "junior",
+    "accounts assistant",
+    "admin executive",
+    "paid recruitment",
+    "registration fee",
+    "registration charges",
+    "service charge",
+    "service charges",
+    "processing fee",
+    "visa charges",
+    "pay for visa",
+    "recruitment fee",
+    "placement fee"
   ],
   "max_jobs_per_run": 15,
   "max_company_lookups_per_run": 0,
   "notify_when_empty": true,
   "linkedin": {
     "enabled": true,
-    "hashtags": [
-      "#UAEJobs",
-      "#DubaiJobs",
-      "#AbuDhabiJobs",
-      "#HiringInUAE",
-      "#OpenToWork",
-      "#JobSeekerUAE",
-      "#DubaiCareers",
-      "#MiddleEastJobs",
-      "#CareersUAE"
-    ],
     "searches": [
       [
         "finance manager",
@@ -91,7 +94,45 @@
       "#opentowork i",
       "please help me",
       "actively looking",
-      "available for immediate"
+      "available for immediate",
+      "send cv via dm (paid",
+      "paid recruitment"
+    ],
+    "hashtag_groups": [
+      [
+        "#Hiring",
+        "#UAEJobs",
+        "#DubaiJobs",
+        "#AbuDhabiJobs",
+        "#HiringInUAE",
+        "#ImmediateHiring",
+        "#JobOpening"
+      ],
+      [
+        "#AccountingJobs",
+        "#FinanceJobs",
+        "#UAECareers",
+        "#DubaiCareers",
+        "#CareersUAE",
+        "#MiddleEastJobs",
+        "#OpenToWork",
+        "#JobSeekerUAE"
+      ]
+    ],
+    "require_location_any": [
+      "uae",
+      "u.a.e",
+      "dubai",
+      "abu dhabi",
+      "abudhabi",
+      "sharjah",
+      "ajman",
+      "ras al khaimah",
+      "rak",
+      "fujairah",
+      "umm al quwain",
+      "al ain",
+      "emirates"
     ]
   },
   "combine_job_searches": true,
