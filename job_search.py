@@ -91,6 +91,20 @@ def clean_url(url):
         return url
 
 
+def app_link(url):
+    """LinkedIn links as clean https://www.linkedin.com/... so phones open them in the LinkedIn app
+    (regional sub-domains like ae.linkedin.com and tracking parameters stop the app from opening)."""
+    try:
+        p = urlparse(url)
+    except Exception:
+        return url
+    if p.netloc.lower().endswith("linkedin.com") or p.netloc.lower() == "lnkd.in":
+        if p.netloc.lower() == "lnkd.in":
+            return url
+        return urlunparse(("https", "www.linkedin.com", p.path.rstrip("/") + "/", "", "", ""))
+    return url
+
+
 def company_norm(name):
     n = norm(name)
     n = re.sub(r"\b(llc|l l c|fze|fzco|fz llc|dmcc|ltd|limited|group|co|company|inc|plc|"
@@ -347,7 +361,10 @@ def fmt_job(job, score, have, missing, info, post_emails, links, confirmed):
     if links:
         lines += ["", "<b>Apply links:</b>"]
         for o in links[:5]:
-            lines.append(f'• <a href="{e(o["link"], quote=True)}">{e(o.get("title", "Apply"))}</a>')
+            label = o.get("title", "Apply")
+            if "linkedin.com" in o["link"]:
+                label = "LinkedIn (opens app)"
+            lines.append(f'• <a href="{e(app_link(o["link"]), quote=True)}">{e(label)}</a>')
     elif job.get("share_link"):
         lines += ["", f'<a href="{e(job["share_link"], quote=True)}">View job</a>']
 
@@ -378,7 +395,7 @@ def fmt_post(post, have, tags):
              f"<i>{e(snippet[:500])}</i>"]
     if have:
         lines.append(f"🎯 Matched: {e(', '.join(have[:8]))}")
-    lines += ["", f'👉 <a href="{e(post["link"], quote=True)}">Open LinkedIn post</a>']
+    lines += ["", f'👉 <a href="{e(app_link(post["link"]), quote=True)}">Open in LinkedIn app</a>']
     lines += email_block(emails, title.split("|")[0].split(" - ")[0].strip()[:80])
     return "\n".join(lines)
 
