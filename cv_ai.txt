@@ -1,0 +1,174 @@
+ABHIJITH K JAYAN
+Finance Manager | Finance Transformation & AI Automation | FP&A |
+Commercial Finance | Business Systems
+Dubai
+LinkedIn: View | Portfolio: View
+
+PROFESSIONAL SUMMARY
+Finance & Accounts professional with an MBA in Finance Management and Chartered Accountancy studies, with experience
+across accounting, audit, taxation, financial reporting, FP&A, corporate finance, revenue assurance, costing, and
+commercial finance. Combines strong finance domain knowledge with practical expertise in AI, automation, workflow
+design, data analysis, and technology-enabled process improvement. Experienced in identifying repetitive and manual
+processes and converting them into automated workflows, dashboards, AI-assisted systems, and decision-support tools.
+Hands-on experience with Generative AI, AI agents, ChatGPT/OpenAI, Claude, n8n, APIs, webhooks, Python, GitHub,
+Docker, low-code/no-code platforms, and AI-assisted development. Focused on using technology to reduce repetitive
+work, improve accuracy, increase operational efficiency, connect business systems, and enable faster financial and
+business decision-making.
+
+CORE EXPERTISE
+ ● Accounting & Finance: • Financial Accounting • Financial Reporting • FP&A • Corporate Finance • Cost
+ Accounting • Revenue Assurance • Financial Analysis • Budgeting • Forecasting • Working Capital • MIS • UAE
+ VAT • UAE Corporate Tax •
+ ● Audit & Compliance: • Internal Audit • Statutory Audit • Internal Controls • Risk Management • GST • UAE VAT •
+ Corporate Tax • Ind AS • IFRS • GAAP
+ ● AI & Finance Automation: • Generative AI • AI Agents • Agentic Workflows • Prompt Engineering • AI-assisted
+ Development • n8n • Process Automation • API Integration • Webhooks • Finance Automation
+ ● Data & Technology: • Advanced Excel • Power BI • SAP ERP • Tally ERP • Python • GitHub • GitHub Actions •
+ Docker • REST APIs • Dashboards
+ ● Business & Commercial: • Pricing • Costing • Procurement • Supply Chain • Revenue Management • Commercial
+ Analysis • Vendor Management • Stakeholder Management • Team Leadership
+ ● Qualifications: • MBA Finance • Chartered Accountancy Final (CA) • Bachelor of Commerce (B.Com), Accounting
+ and Finance (A&F).
+
+WORK EXPERIENCE
+
+Accounts and Finance Manager
+Kala SpiceX (Grinix) • Delhi & Kerala | Oct 2023 – Aug 2026 | FMCG, Spice Wholesale Trading, Import Export Industry
+ ● Managed end-to-end Accounts & Finance functions, including bookkeeping, GST, taxation, statutory compliance,
+ vendor accounting, reconciliations and financial reporting.
+ ● Led financial planning, budgeting, forecasting and cash-flow management, aligning financial resources with
+ procurement, inventory, operating expenses and business growth requirements.
+ ● Managed product costing, pricing and margin analysis for spice trading operations, evaluating procurement costs,
+ logistics, market prices and target margins to support profitable pricing decisions.
+ ● Prepared and analysed MIS reports, management accounts and financial statements, providing visibility into
+ revenue, expenses, gross margins, working capital and overall profitability.
+ ● Monitored accounts payable, vendor balances, procurement payments and reconciliations, ensuring accuracy and
+ timely settlement across sourcing and logistics operations.
+ ● Analysed cost structures and profitability by product/customer/channel, supporting management decisions on
+ pricing, procurement and sales strategy.
+ ● Coordinated demand forecasting, inventory planning and market research with commercial and operations teams
+ to improve purchasing decisions and working-capital utilisation.
+ ● Managed revenue and expense tracking, identifying cost-control opportunities and supporting effective allocation
+ of financial resources across business functions.
+ ● Supported procurement and sourcing decisions through cost analysis, supplier pricing evaluation and financial
+ impact assessment.
+ ● Developed and implemented digital MIS and AI-enabled tools to streamline financial tracking, reporting, data
+ analysis and management decision-making.
+ ● Maintained financial controls and supported audit, compliance and documentation requirements, ensuring
+ accuracy and transparency across accounting and commercial transactions.
+ ● Worked closely with sales and procurement teams on pricing strategy, customer margins, payment terms and
+ commercial negotiations, ensuring business decisions remained aligned with profitability and cash-flow
+ objectives.
+ ● Conducted market and competitor analysis to support pricing decisions, demand forecasting and financial
+ planning for the Grinix spice business.
+ ● Supported the commercial growth of the business through sales, customer management and distribution
+ activities, while maintaining a strong focus on cost control, margins and financial sustainability.
+ ● Coordinated quality control and logistics from a financial and cost-management perspective, ensuring supply-
+ chain activities were commercially viable and accurately reflected in financial records.
+
+Senior Finance Executive
+Wipro Ltd. • Bengaluru | Dec 2021 – Aug 2023 | Information Technology Industry
+ ● Team Lead of Revenue Centre of Excellence, Europe Team, UK&I Sector of Wipro Ltd.
+ ● Led a high-performing finance team of 14 members (6 Chartered Accountants, 4 CA Inter, 4 MBA Graduates).
+ ● Forecasted quarterly revenue and created budgets for various European clients; managed revenue operations for
+ 160+ accounts of Wipro Ltd. and validations of around $500 Million USD each month.
+ ● Associated with cross-functional teams such as Revenue Assurance, FP&A, and Audit teams post quarter-end
+ closures.
+ ● Provided strategic guidance for accurate revenue reporting, compliance, and initiated revenue optimization
+ initiatives.
+ ● Performed deal pricing and optimized deal prices while negotiating with customers on delivery-linked business
+ deals.
+ ● Reviewed contracts to interpret financial models and financial reporting as per IFRS 15 and IFRS 16.
+ ● Ensured attention to detail while validating order booking and downstream activities in Wipro ERP (Quantum).
+ ● Managed Accounts Receivable, System Audit, User Acceptance Testing (UAT) assistance, month-end revenue
+ closure activities, reporting, and presentations.
+ ● Handled Account Reconciliation, Invoice Reconciliation, Debtors Ageing, Unbilled/Unearned Revenue
+ Reconciliation, and Costing.
+
+Audit Associate | Auditing & Compliance Industry
+Gupta Raj and Co, Chartered Accountants • Nagpur | Apr 2020 – Nov 2021
+Jatin Karda and Co, Chartered Accountants • Nagpur | May 2019 – Mar 2020
+ ● Specialized in processing loan files for individuals and commercial loans with renowned nationalized banks.
+ ● Conducted financial analyses and evaluated creditworthiness using project financing ratios.
+ ● Performed financial modelling, equity valuation, restructuring, and various investment studies.
+ ● Prepared financial statements for Private and Public Ltd. companies, partnership firms, and individuals.
+ ● Applied Accounting (Ind AS and IFRS), Auditing, and Company Law knowledge acquired during CA Final studies.
+Audit Assistant – Auditing, Financial Reporting & Statutory Compliance | Auditing & Compliance Industry
+Jatin Karda and Co, Chartered Accountants • Nagpur | Nov 2018 – Apr 2019
+V K Surana and Co, Chartered Accountants • Nagpur | Nov 2016 – Oct 2018
+Srinivasan and Shankar Chartered Accountants • Chennai | Jul 2015 – Aug 2016
+ ● Conducted various statutory and internal audits of private and public limited companies, individuals, firms, trusts,
+ and societies.
+ ● Handled accounting and taxation for private limited companies, individuals, firms, trusts, and societies.
+ ● Performed general ledger review and auditing of various companies and firms, from vouching to finalization of
+ accounts.
+
+PROJECTS
+AI Job-Search Agent | n8n, GitHub Actions, Python, Telegram Bot API, Google Jobs API
+ ● Built an automated system that searches UAE job listings daily and scores each role against a CV using ATS-style
+ keyword matching.
+ ● Enriched shortlisted roles with public company data (website, contact details, address) and delivered them as
+ real-time Telegram alerts.
+ ● Runs fully in the cloud on a schedule, with duplicate detection and API-usage controls.
+Finance Automation Workflows | n8n, Docker, REST APIs
+ ● Built and self-hosted automated workflows for exchange-rate tracking (INR/AED) and alerts.
+Cardamom Market Intelligence Dashboard | View
+ ● Built from scratch a TradingView-style charting platform for cardamom traders and auction market analysts.
+ ● Candlestick, area and line charts across 1D to 5Y timeframes, with 14 technical indicators (SMA, EMA, Bollinger
+ Bands, RSI, MACD and more).
+ ● Auction lot data, supply/demand and net-flow analysis, with drill-down by price, auctioneer and market events.
+ ● Skills: data visualization, commodity price analytics, technical analysis, AI-assisted web development.
+Kala SpiceX: Brand Building & Social Media | View
+ ● Built and grew the brand's social media presence to 20M+ views through content strategy and digital marketing.
+ ● Drove brand awareness and customer reach for the spice trading business, alongside managing its finance
+ function.
+ ● Skills: branding, content strategy, digital marketing, audience growth.
+
+EDUCATION
+ ● MBA, Finance Management (Jan 2023 – Dec 2025) – DY Patil Vidyapeeth University, Pune – View
+ ● B.Com, Accounting & Finance (Apr 2018 – Jan 2021) – Indira Gandhi Open University, Nagpur – View
+ ● CA Final, Chartered Accountancy (Nov 2017 – Present) – Institute of Chartered Accountants of India (ICAI), Delhi –
+ View
+
+CERTIFICATIONS
+ ● Certification Courses, Institute of Chartered Accountants of India (ICAI): Orientation Programme; Information
+ Technology Training Course; General Management & Communication Skills 1; Advanced Management &
+ Communication Skills; Advanced Information Technology Training Course.
+ ● Microsoft Excel 2013 Certification – Udemy – View 1 | View 2
+ ● Microsoft Power BI – View
+ ● Microsoft Outlook 2013 – View
+ ● Microsoft Word 2013 Certification – View
+ ● Stock Market Trading – View
+LANGUAGES
+Hindi, Tamil, Malayalam, English
+
+OTHER SKILLS & KEYWORDS FOR ATS
+ ● Accounting & Finance: Accounting, Financial Accounting, Corporate Finance, Financial Management, Financial
+ Planning and Analysis (FP&A), Financial Reporting, Financial Statements Preparation, Balance Sheet, Profit & Loss
+ (P&L) Statement, Cash Flow Statement, General Ledger (GL), Accounts Receivable (AR), Accounts Payable (AP),
+ Account Reconciliation, Bank Reconciliation, Invoice Reconciliation, Debtors Ageing, Unbilled Revenue, Unearned
+ Revenue, Working Capital Management, Cost Accounting, Costing, Budgeting, Forecasting, Variance Analysis,
+ Revenue Assurance, Revenue Recognition, Revenue Reporting, Month-End Close, Quarter-End Close, MIS
+ Reporting, Statutory Reporting, UAE VAT, Corporate Tax
+ ● AI & Finance Automation: AI Integration, Generative AI, AI Agents, Agentic AI Workflows, Prompt Engineering,
+ ChatGPT / OpenAI, Claude (Anthropic), Grok, n8n Workflow Automation, Process Automation, AI-assisted
+ Development (Vibe Coding), Low-code / No-code Tools, API Integration, Webhooks, Telegram Bots, GitHub,
+ GitHub Actions, Docker, Digital Transformation, Finance Process Automation, Dashboards.
+ ● Audit & Compliance: Statutory Audit, Internal Audit, System Audit, Audit Associate, Audit Assistant, Auditing,
+ Compliance, Regulatory Compliance, Company Law, Risk Assessment, Risk Management, Internal Controls, GST
+ Filing, Taxation, Direct Tax, Indirect Tax, Statutory Compliance, User Acceptance Testing (UAT), Contract Review.
+ ● Reporting Standards: Ind AS, IAS, IFRS, IFRS 15, IFRS 16, GAAP, Financial Modelling, Equity Valuation, Credit
+ Analysis, Creditworthiness Assessment, Project Financing, Loan Processing, Financial Restructuring, Investment
+ Analysis, Investment Planning, Technical and Fundamental Analysis, Stock Market Analysis.
+ ● Executive & Analyst Skills: Financial Analyst, Business Analyst, Finance Executive, Senior Finance Executive,
+ Finance Manager, Accountant, Accounts Executive, Strategic Planning, Strategic Decision-Making, Deal Pricing,
+ Pricing Strategy, Contract Negotiation, Stakeholder Management, Cross-Functional Collaboration, Vendor
+ Management, Team Leadership, People Management, Team Building, Delegation, Problem-Solving, Attention to
+ Detail, Presentation Skills, Communication Skills.
+ ● Tools & Systems: Advanced Microsoft Excel, Microsoft Excel, Microsoft Power BI, Microsoft Word, Microsoft
+ Outlook, SAP, SAP ERP, Tally ERP, ERP Systems, Wipro Quantum ERP, MIS Tools, Adobe Suite.
+ ● Business & Operations Support: Operations Management, Supply Chain Management, Logistics, Procurement,
+ Sourcing, Quality Control, Market Research, Demand Forecasting, Vendor Management, Branding, Marketing.
+ ● Qualifications: MBA Finance, MBA in Finance Management, Chartered Accountancy (CA), CA Final, Bachelor of
+ Commerce (B.Com), Accounting and Finance (A&F).
+
