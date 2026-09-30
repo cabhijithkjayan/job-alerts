@@ -123,5 +123,79 @@
   "address": "",
   "emails": [],
   "rating": ""
+ },
+ "salt": {
+  "website": "https://welovesalt.com",
+  "phone": "+971 4 569 0169",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "etihad airways": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "sonder": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "e& uae": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "fanatics momentum": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "emarat emirates petroleum p j s c": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "al futtaim": {
+  "website": "https://ae.trabajo.org",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "info@trabajo.org"
+  ],
+  "rating": ""
+ },
+ "selected recruitment": {
+  "website": "https://ae.trabajo.org",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "info@trabajo.org"
+  ],
+  "rating": ""
+ },
+ "synthires": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
+ },
+ "tanqeeb": {
+  "website": "https://bebee.com",
+  "phone": "",
+  "address": "",
+  "emails": [],
+  "rating": ""
  }
 }
