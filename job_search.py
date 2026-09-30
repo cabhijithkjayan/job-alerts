@@ -735,6 +735,8 @@ def main():
     alerts_sent = 0
     uae_words = cfg.get("linkedin", {}).get("require_location_any", ["uae", "dubai", "abu dhabi", "sharjah"])
     email_jobs, per_source = ea.gmail_alert_jobs(cfg.get("email_sources"), cfg.get("gmail_days", 3))
+    if cfg.get("bebee_urls"):
+        email_jobs = email_jobs + ea.bebee_jobs(cfg["bebee_urls"], cfg.get("bebee_pages", 2)) if full else email_jobs
     sent_by_source = {}
     for job in email_jobs:
         if not job.get("title"):
