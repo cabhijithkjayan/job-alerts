@@ -278,6 +278,16 @@ def serpapi(params):
     return data
 
 
+def track_line(title, cfg):
+    """Tag a job as Track A / Track B when its title matches a career-plan title."""
+    nt = f" {norm(title)} "
+    hits = []
+    for tr in cfg.get("tracks", []):
+        if any(all(f" {w} " in nt for w in norm(t).split()) for t in tr["titles"]):
+            hits.append(f"{tr['name']} · {tr['label']}")
+    return ("\n🧭 " + " | ".join(hits)) if hits else ""
+
+
 def combined_query(titles):
     return " OR ".join(titles)
 
@@ -591,8 +601,11 @@ def main():
 
     # ---------- 1. Google Jobs
     matches, others = [], []
-    queries = ([combined_query(p_["titles"]) for p_ in PROFILES if p_["titles"]]
-               if cfg.get("combine_job_searches", True) else titles) if full else []
+    if cfg.get("search_groups"):
+        queries = [combined_query(g) for g in cfg["search_groups"]] if full else []
+    else:
+        queries = ([combined_query(p_["titles"]) for p_ in PROFILES if p_["titles"]]
+                   if cfg.get("combine_job_searches", True) else titles) if full else []
     for query in queries:
         for loc in cfg.get("locations", ["United Arab Emirates"]):
             print(f"Searching: {query} | {loc}")
@@ -613,7 +626,7 @@ def main():
                 hl = " ".join(i for x in job.get("job_highlights", []) for i in x.get("items", []))
                 score, have, miss, cvline = multi_ats(job.get("title", ""),
                                                       f"{job.get('description','')} {hl}", skills)
-                job["_cvline"] = cvline
+                job["_cvline"] = cvline + track_line(job.get("title", ""), cfg)
                 print(f"  {score:3d}%  {job.get('title')} - {job.get('company_name')}")
                 if score >= min_score:
                     matches.append((score, job, have, miss, keys))

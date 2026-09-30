@@ -2,7 +2,22 @@
   "job_titles": [
     "Finance Manager",
     "Senior Accountant",
-    "FP&A Analyst"
+    "FP&A Analyst",
+    "FP&A Manager",
+    "Commercial Finance Manager",
+    "Finance Business Partner",
+    "Revenue Assurance Manager",
+    "Senior Financial Analyst",
+    "Financial Controller",
+    "Assistant Finance Manager",
+    "Finance Transformation",
+    "Finance Automation",
+    "Finance Systems",
+    "Finance Business Analyst",
+    "Finance Process Improvement",
+    "AI Finance",
+    "Finance Technology",
+    "AI Business Analyst"
   ],
   "locations": [
     "United Arab Emirates"
@@ -45,15 +60,27 @@
     "searches": [
       [
         "finance manager",
-        "accounts manager",
-        "financial controller",
-        "finance executive"
+        "fp&a manager",
+        "commercial finance manager",
+        "finance business partner"
       ],
       [
-        "senior accountant",
-        "accountant",
-        "FP&A",
-        "financial analyst"
+        "revenue assurance manager",
+        "senior financial analyst",
+        "financial controller",
+        "assistant finance manager"
+      ],
+      [
+        "finance transformation",
+        "finance automation",
+        "finance systems",
+        "finance business analyst"
+      ],
+      [
+        "finance process improvement",
+        "ai finance",
+        "finance technology",
+        "ai business analyst"
       ]
     ],
     "max_age_days": 15,
@@ -169,7 +196,13 @@
     "commercial finance",
     "business systems",
     "finance systems",
-    "erp"
+    "erp",
+    "revenue assurance",
+    "business partner",
+    "finance technology",
+    "ai finance",
+    "process improvement",
+    "ai "
   ],
   "alert_exclude_words": [
     "sales",
@@ -201,7 +234,22 @@
       "job_titles": [
         "Finance Manager",
         "Senior Accountant",
-        "FP&A Analyst"
+        "FP&A Analyst",
+        "FP&A Manager",
+        "Commercial Finance Manager",
+        "Finance Business Partner",
+        "Revenue Assurance Manager",
+        "Senior Financial Analyst",
+        "Financial Controller",
+        "Assistant Finance Manager",
+        "Finance Transformation",
+        "Finance Automation",
+        "Finance Systems",
+        "Finance Business Analyst",
+        "Finance Process Improvement",
+        "AI Finance",
+        "Finance Technology",
+        "AI Business Analyst"
       ]
     },
     {
@@ -211,8 +259,77 @@
         "Finance Transformation Manager",
         "Finance Automation",
         "Commercial Finance Manager",
-        "FP&A Manager"
+        "FP&A Manager",
+        "Finance Manager",
+        "Finance Business Partner",
+        "Revenue Assurance Manager",
+        "Senior Financial Analyst",
+        "Financial Controller",
+        "Assistant Finance Manager",
+        "Finance Transformation",
+        "Finance Systems",
+        "Finance Business Analyst",
+        "Finance Process Improvement",
+        "AI Finance",
+        "Finance Technology",
+        "AI Business Analyst"
       ]
     }
+  ],
+  "tracks": [
+    {
+      "name": "Track A",
+      "label": "Immediate employability",
+      "titles": [
+        "Finance Manager",
+        "FP&A Manager",
+        "Commercial Finance Manager",
+        "Finance Business Partner",
+        "Revenue Assurance Manager",
+        "Senior Financial Analyst",
+        "Financial Controller",
+        "Assistant Finance Manager"
+      ]
+    },
+    {
+      "name": "Track B",
+      "label": "Career differentiation",
+      "titles": [
+        "Finance Transformation",
+        "Finance Automation",
+        "Finance Systems",
+        "Finance Business Analyst",
+        "Finance Process Improvement",
+        "AI Finance",
+        "Finance Technology",
+        "AI Business Analyst"
+      ]
+    }
+  ],
+  "search_groups": [
+    [
+      "Finance Manager",
+      "FP&A Manager",
+      "Commercial Finance Manager",
+      "Finance Business Partner"
+    ],
+    [
+      "Revenue Assurance Manager",
+      "Senior Financial Analyst",
+      "Financial Controller",
+      "Assistant Finance Manager"
+    ],
+    [
+      "Finance Transformation",
+      "Finance Automation",
+      "Finance Systems",
+      "Finance Business Analyst"
+    ],
+    [
+      "Finance Process Improvement",
+      "AI Finance",
+      "Finance Technology",
+      "AI Business Analyst"
+    ]
   ]
 }
