@@ -162,7 +162,14 @@
     "ifrs",
     "fico",
     "commercial analyst",
-    "business analyst"
+    "business analyst",
+    "transformation",
+    "finance automation",
+    "process automation",
+    "commercial finance",
+    "business systems",
+    "finance systems",
+    "erp"
   ],
   "alert_exclude_words": [
     "sales",
@@ -186,5 +193,26 @@
   "errors_chat_id": "-1004352353621",
   "summary_chat_id": "-1004326153889",
   "daily_cron": "50 4 * * *",
-  "serpapi_monthly_budget": 240
+  "serpapi_monthly_budget": 240,
+  "profiles": [
+    {
+      "label": "Accounts & Finance Manager",
+      "cv_file": "cv.txt",
+      "job_titles": [
+        "Finance Manager",
+        "Senior Accountant",
+        "FP&A Analyst"
+      ]
+    },
+    {
+      "label": "Finance Transformation & AI",
+      "cv_file": "cv_ai.txt",
+      "job_titles": [
+        "Finance Transformation Manager",
+        "Finance Automation",
+        "Commercial Finance Manager",
+        "FP&A Manager"
+      ]
+    }
+  ]
 }
