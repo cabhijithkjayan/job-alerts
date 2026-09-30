@@ -187,6 +187,25 @@ def ats_score(title, text, cv_norm, skills, target_titles):
     return round(100 * (0.7 * skill_pct + 0.3 * title_pct)), have, missing
 
 
+PROFILES = []   # [{'label','cv_norm','titles'}] filled in main()
+
+
+def multi_ats(title, text, skills):
+    """Score the job against EVERY CV. Returns best (score, have, missing) + a line showing all CVs."""
+    results = []
+    for pr in PROFILES:
+        sc, hv, ms = ats_score(title, text, pr["cv_norm"], skills, pr["titles"])
+        results.append((sc, hv, ms, pr["label"]))
+    results.sort(key=lambda r: r[0], reverse=True)
+    best = results[0]
+    if len(results) > 1:
+        others = " · ".join(f"{r[3]} {r[0]}%" for r in results[1:])
+        line = f"📄 <b>Best CV: {html.escape(best[3])} ({best[0]}%)</b> · {html.escape(others)}"
+    else:
+        line = ""
+    return best[0], best[1], best[2], line
+
+
 # ---------------------------------------------------------------- freshness & active check
 def age_days(posted_at):
     """'3 hours ago' -> 0, '5 days ago' -> 5, '30+ days ago' -> 30, 'Sep 20, 2026' -> days since, unknown -> None."""
@@ -386,6 +405,8 @@ def fmt_job(job, score, have, missing, info, post_emails, links, confirmed):
         lines.append(f"🕒 {e(meta)}")
     lines.append("🟢 Apply link checked: open" if confirmed else "🟡 Active on Google Jobs")
     lines.append(f"🎯 <b>ATS match: {score}%</b>")
+    if job.get("_cvline"):
+        lines.append(job["_cvline"])
     if have:
         lines.append(f"✅ {e(', '.join(have[:8]))}")
     if missing:
@@ -514,7 +535,21 @@ def main():
     if len(cv_norm) < 200:
         sys.exit("cv.txt is empty - paste your CV text into it.")
     skills = load_skills()
-    titles = cfg.get("job_titles", [])
+    profiles_cfg = cfg.get("profiles") or [{"label": "CV", "cv_file": "cv.txt",
+                                            "job_titles": cfg.get("job_titles", [])}]
+    PROFILES.clear()
+    for pc in profiles_cfg:
+        f = BASE / pc.get("cv_file", "cv.txt")
+        if f.exists():
+            PROFILES.append({"label": pc.get("label", f.stem), "cv_norm": norm(f.read_text(encoding="utf-8")),
+                             "titles": pc.get("job_titles", [])})
+        else:
+            report_error(f"CV file missing: {f.name}")
+    if not PROFILES:
+        PROFILES.append({"label": "CV", "cv_norm": cv_norm, "titles": cfg.get("job_titles", [])})
+    cv_norm = " ".join(p_["cv_norm"] for p_ in PROFILES)     # combined, for simple skill checks
+    titles = list(dict.fromkeys(t for p_ in PROFILES for t in p_["titles"]))
+    print("CV profiles:", [p_["label"] for p_ in PROFILES])
     min_score = cfg.get("min_ats_score", 70)
     max_age = cfg.get("max_job_age_days", 14)
     exclude = [w.lower() for w in cfg.get("exclude_words", [])]
@@ -556,7 +591,8 @@ def main():
 
     # ---------- 1. Google Jobs
     matches, others = [], []
-    queries = ([combined_query(titles)] if cfg.get("combine_job_searches", True) else titles) if full else []
+    queries = ([combined_query(p_["titles"]) for p_ in PROFILES if p_["titles"]]
+               if cfg.get("combine_job_searches", True) else titles) if full else []
     for query in queries:
         for loc in cfg.get("locations", ["United Arab Emirates"]):
             print(f"Searching: {query} | {loc}")
@@ -575,9 +611,9 @@ def main():
                     stats["old"] += 1
                     continue
                 hl = " ".join(i for x in job.get("job_highlights", []) for i in x.get("items", []))
-                score, have, miss = ats_score(job.get("title", ""),
-                                              f"{job.get('description','')} {hl}",
-                                              cv_norm, skills, titles)
+                score, have, miss, cvline = multi_ats(job.get("title", ""),
+                                                      f"{job.get('description','')} {hl}", skills)
+                job["_cvline"] = cvline
                 print(f"  {score:3d}%  {job.get('title')} - {job.get('company_name')}")
                 if score >= min_score:
                     matches.append((score, job, have, miss, keys))
@@ -718,8 +754,10 @@ def main():
         if job.get("posted"):
             lines.append(f"🕒 {e(job['posted'])}")
         if len(job.get("snippet", "")) >= 80:
-            score, have, miss = ats_score(job["title"], job["snippet"], cv_norm, skills, titles)
+            score, have, miss, cvline = multi_ats(job["title"], job["snippet"], skills)
             lines.append(f"🎯 Match (from summary): {score}%")
+            if cvline:
+                lines.append(cvline)
             if have:
                 lines.append(f"✅ {e(', '.join(have[:6]))}")
         if job["apply_options"]:
@@ -746,9 +784,11 @@ def main():
             score = None
             lines = ["📌 <b>Saved post (from My Finds)</b>", f"<b>{e(first)}</b>"]
             if len(body) >= 150:
-                score, have, miss = ats_score(first, body, cv_norm, skills, titles)
+                score, have, miss, cvline = multi_ats(first, body, skills)
                 lines.append(f"<i>{e(body[:450])}{'…' if len(body) > 450 else ''}</i>")
                 lines.append(f"🎯 <b>ATS match: {score}%</b>")
+                if cvline:
+                    lines.append(cvline)
                 if have:
                     lines.append(f"✅ {e(', '.join(have[:8]))}")
                 if miss:
