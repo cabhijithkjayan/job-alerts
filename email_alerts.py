@@ -211,3 +211,53 @@ def gmail_alert_jobs(sources=None, days=3):
         print("  ! Gmail error:", ex)
     print("Jobs found in emails:", per_source or "none")
     return jobs, per_source
+
+
+# ------------------------------------------------------------------ BeBee (public listing pages)
+AR_CITIES = {"دبي": "Dubai, UAE", "أبو ظبي": "Abu Dhabi, UAE", "ابو ظبي": "Abu Dhabi, UAE",
+             "الشارقة": "Sharjah, UAE", "عجمان": "Ajman, UAE", "رأس الخيمة": "Ras Al Khaimah, UAE",
+             "الفجيرة": "Fujairah, UAE", "أم القيوين": "Umm Al Quwain, UAE", "العين": "Al Ain, UAE",
+             "الإمارات العربية المتحدة": "United Arab Emirates"}
+
+
+def bebee_jobs(urls, pages=2):
+    """Read BeBee listing pages (newest first). Free, no login. Returns the same job dicts as the emails."""
+    import requests
+    jobs, seen = [], set()
+    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+           "Accept-Language": "en,ar;q=0.8"}
+    for base in urls:
+        for pg in range(1, pages + 1):
+            url = base + (("&" if "?" in base else "?") + f"page={pg}" if pg > 1 else "")
+            try:
+                r = requests.get(url, headers=hdr, timeout=30)
+                if r.status_code != 200:
+                    ERRORS.append(f"BeBee page returned {r.status_code} (site may block the bot)")
+                    print("  ! BeBee", r.status_code)
+                    break
+                page = r.text
+            except Exception as ex:
+                ERRORS.append(f"BeBee could not be read: {ex}")
+                break
+            blocks = re.split(r"<h3", page)[1:]
+            for b in blocks:
+                m = re.search(r'href="(/ae/jobs/[^"]*--fj-\d+)"[^>]*>(.*?)</a>', b, re.S)
+                if not m:
+                    continue
+                link = "https://bebee.com" + html.unescape(m.group(1))
+                if link in seen:
+                    continue
+                seen.add(link)
+                title = " ".join(_lines(m.group(2)))
+                rest = b.split("</article>")[0][m.end():]
+                cm = re.search(r'href="/ae/companies/[^"]*"[^>]*>(.*?)</a>', rest, re.S)
+                company = " ".join(_lines(cm.group(1))) if cm else ""
+                sp = re.search(r"</h3>.*?<span[^>]*>(?:<svg.*?</svg>)?([^<]{2,40})</span>", b, re.S)
+                city = sp.group(1).strip() if sp else ""
+                loc = AR_CITIES.get(city, city if re.search(r"[A-Za-z]", city) else "") or "United Arab Emirates"
+                pm = re.search(r"<p[^>]*>(.*?)</p>", rest, re.S)
+                snippet = " ".join(_lines(pm.group(1))) if pm else ""
+                posted = "Today" if "اليوم" in rest[-200:] else ""
+                jobs.append(_job("BeBee", title, company, loc, link, posted=posted, snippet=snippet, uid=link))
+    print("BeBee jobs read:", len(jobs))
+    return jobs
