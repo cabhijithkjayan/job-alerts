@@ -99,3 +99,10 @@ Web Development|Web Application|Web App
 Social Media|Social Media Marketing|Instagram
 Digital Marketing|Content Strategy|Content Creation
 Branding|Brand Building|Brand Management
+# --- CV 2: Finance Transformation & AI ---
+Commercial Finance|Commercial Analysis|Commercial Analyst|Commercial Controller
+Business Systems|Finance Systems|ERP Implementation|System Implementation|Systems Implementation
+Revenue Management
+Finance Automation|Finance Process Automation|Automated Workflows
+Change Management|Transformation Programme|Transformation Program
+Process Mapping|Process Re-engineering|Process Optimization|Process Optimisation
