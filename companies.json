@@ -298,5 +298,14 @@
   "address": "",
   "emails": [],
   "rating": ""
+ },
+ "aiqu": {
+  "website": "https://www.jobaaj.com",
+  "phone": "",
+  "address": "",
+  "emails": [
+   "contact@jobaaj.com"
+  ],
+  "rating": ""
  }
 }
