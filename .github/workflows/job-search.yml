@@ -2,9 +2,8 @@ name: UAE Job Alerts
 
 on:
   schedule:
-    - cron: "50 4 * * *"     # FULL search daily 8:50 AM UAE (arrives ~9 AM)
-    - cron: "*/30 * * * *"   # every 30 min: free check - /search command, pasted posts, LinkedIn alert emails
-  workflow_dispatch:          # "Run workflow" button = full search
+    - cron: "0 5-19/2 * * *"   # Every 2 hours, 9 AM–11 PM UAE
+  workflow_dispatch:            # Run manually
 
 permissions:
   contents: write
