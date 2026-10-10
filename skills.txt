@@ -103,6 +103,8 @@ Branding|Brand Building|Brand Management
 Commercial Finance|Commercial Analysis|Commercial Analyst|Commercial Controller
 Business Systems|Finance Systems|ERP Implementation|System Implementation|Systems Implementation
 Revenue Management
-Finance Automation|Finance Process Automation|Automated Workflows
+Finance Automation|Finance Process Automation|Automated Workflows|Accounting Automation
+Finance Workflows|Accounting Workflows|Approval Workflows|Workflows|Workflow
+Finance Digital Transformation|Digital Finance|Finance Digitalisation|Finance Digitalization
 Change Management|Transformation Programme|Transformation Program
 Process Mapping|Process Re-engineering|Process Optimization|Process Optimisation

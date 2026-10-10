@@ -17,7 +17,11 @@
     "Finance Process Improvement",
     "AI Finance",
     "Finance Technology",
-    "AI Business Analyst"
+    "AI Business Analyst",
+    "Accounting Automation",
+    "Finance Workflow Automation",
+    "Finance Digital Transformation",
+    "Finance Process Excellence"
   ],
   "locations": [
     "United Arab Emirates"
@@ -81,6 +85,12 @@
         "ai finance",
         "finance technology",
         "ai business analyst"
+      ],
+      [
+        "accounting automation",
+        "finance workflow automation",
+        "finance digital transformation",
+        "finance process excellence"
       ]
     ],
     "max_age_days": 15,
@@ -202,7 +212,18 @@
     "finance technology",
     "ai finance",
     "process improvement",
-    "ai "
+    "ai ",
+    "automation",
+    "workflow",
+    "digital finance",
+    "finance digital",
+    "process excellence",
+    "finance operations",
+    "finance process",
+    "accounting process",
+    "accounting systems",
+    "systems accountant",
+    "shared services"
   ],
   "alert_exclude_words": [
     "sales",
@@ -249,7 +270,11 @@
         "Finance Process Improvement",
         "AI Finance",
         "Finance Technology",
-        "AI Business Analyst"
+        "AI Business Analyst",
+        "Accounting Automation",
+        "Finance Workflow Automation",
+        "Finance Digital Transformation",
+        "Finance Process Excellence"
       ]
     },
     {
@@ -272,7 +297,11 @@
         "Finance Process Improvement",
         "AI Finance",
         "Finance Technology",
-        "AI Business Analyst"
+        "AI Business Analyst",
+        "Accounting Automation",
+        "Finance Workflow Automation",
+        "Finance Digital Transformation",
+        "Finance Process Excellence"
       ]
     }
   ],
@@ -302,7 +331,11 @@
         "Finance Process Improvement",
         "AI Finance",
         "Finance Technology",
-        "AI Business Analyst"
+        "AI Business Analyst",
+        "Accounting Automation",
+        "Finance Workflow Automation",
+        "Finance Digital Transformation",
+        "Finance Process Excellence"
       ]
     }
   ],
@@ -330,6 +363,12 @@
       "AI Finance",
       "Finance Technology",
       "AI Business Analyst"
+    ],
+    [
+      "Accounting Automation",
+      "Finance Workflow Automation",
+      "Finance Digital Transformation",
+      "Finance Process Excellence"
     ]
   ],
   "bebee_urls": [
